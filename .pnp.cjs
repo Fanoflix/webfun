@@ -39,6 +39,7 @@ const RAW_RUNTIME_STATE =
           ["@tanstack/react-router-devtools", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.167.0"],\
           ["@tanstack/react-router-ssr-query", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.167.1"],\
           ["@tanstack/react-start", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.168.25"],\
+          ["@tanstack/router-core", "npm:1.171.13"],\
           ["@tanstack/router-plugin", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.168.18"],\
           ["@testing-library/dom", "npm:10.4.1"],\
           ["@testing-library/react", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:16.3.2"],\
@@ -2380,7 +2381,7 @@ const RAW_RUNTIME_STATE =
         "packageDependencies": [\
           ["@tanstack/react-router", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.170.15"],\
           ["@tanstack/react-router-devtools", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.167.0"],\
-          ["@tanstack/router-core", null],\
+          ["@tanstack/router-core", "npm:1.171.13"],\
           ["@tanstack/router-devtools-core", "virtual:ab4295f855b3d8ed5cf984d233c2e0ffb6e90db8b0af7c76559ea949d1b9aba7713a12d41f81e7bfa72bf05bacefd11478d75918de4f028c0d36861ee4fbcdb6#npm:1.168.0"],\
           ["@types/react", "npm:19.2.17"],\
           ["@types/react-dom", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:19.2.3"],\
@@ -2629,7 +2630,7 @@ const RAW_RUNTIME_STATE =
           ["@tanstack/router-core", "npm:1.171.13"],\
           ["cookie-es", "npm:3.1.1"],\
           ["seroval", "npm:1.5.4"],\
-          ["seroval-plugins", "virtual:43f37d33b8b97d6da12c774a7da8b216afc26ea8085bc0715f558f91d3dee1568b44eb8d131c02e2389f002c38a39e3c7cf04f091ce9170de5f93b417dc93ab4#npm:1.5.4"]\
+          ["seroval-plugins", "virtual:1686847b8dbeddc136989e52a1f5c8ac7dec975b1e54cb48ec04a187aee8fc17f805ad8ee3a47074d82eacf5ab4c04f96684d9b636830ae02f0495cdb755e88f#npm:1.5.4"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -2645,7 +2646,7 @@ const RAW_RUNTIME_STATE =
       ["virtual:ab4295f855b3d8ed5cf984d233c2e0ffb6e90db8b0af7c76559ea949d1b9aba7713a12d41f81e7bfa72bf05bacefd11478d75918de4f028c0d36861ee4fbcdb6#npm:1.168.0", {\
         "packageLocation": "./.yarn/__virtual__/@tanstack-router-devtools-core-virtual-8c8b08a349/4/.yarn/berry/cache/@tanstack-router-devtools-core-npm-1.168.0-b176d5782e-10c0.zip/node_modules/@tanstack/router-devtools-core/",\
         "packageDependencies": [\
-          ["@tanstack/router-core", null],\
+          ["@tanstack/router-core", "npm:1.171.13"],\
           ["@tanstack/router-devtools-core", "virtual:ab4295f855b3d8ed5cf984d233c2e0ffb6e90db8b0af7c76559ea949d1b9aba7713a12d41f81e7bfa72bf05bacefd11478d75918de4f028c0d36861ee4fbcdb6#npm:1.168.0"],\
           ["@types/csstype", null],\
           ["@types/tanstack__router-core", null],\
@@ -7591,12 +7592,12 @@ const RAW_RUNTIME_STATE =
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:43f37d33b8b97d6da12c774a7da8b216afc26ea8085bc0715f558f91d3dee1568b44eb8d131c02e2389f002c38a39e3c7cf04f091ce9170de5f93b417dc93ab4#npm:1.5.4", {\
-        "packageLocation": "./.yarn/__virtual__/seroval-plugins-virtual-384ec6f6a1/4/.yarn/berry/cache/seroval-plugins-npm-1.5.4-10334a03de-10c0.zip/node_modules/seroval-plugins/",\
+      ["virtual:1686847b8dbeddc136989e52a1f5c8ac7dec975b1e54cb48ec04a187aee8fc17f805ad8ee3a47074d82eacf5ab4c04f96684d9b636830ae02f0495cdb755e88f#npm:1.5.4", {\
+        "packageLocation": "./.yarn/__virtual__/seroval-plugins-virtual-3f2002c3af/4/.yarn/berry/cache/seroval-plugins-npm-1.5.4-10334a03de-10c0.zip/node_modules/seroval-plugins/",\
         "packageDependencies": [\
           ["@types/seroval", null],\
           ["seroval", "npm:1.5.4"],\
-          ["seroval-plugins", "virtual:43f37d33b8b97d6da12c774a7da8b216afc26ea8085bc0715f558f91d3dee1568b44eb8d131c02e2389f002c38a39e3c7cf04f091ce9170de5f93b417dc93ab4#npm:1.5.4"]\
+          ["seroval-plugins", "virtual:1686847b8dbeddc136989e52a1f5c8ac7dec975b1e54cb48ec04a187aee8fc17f805ad8ee3a47074d82eacf5ab4c04f96684d9b636830ae02f0495cdb755e88f#npm:1.5.4"]\
         ],\
         "packagePeers": [\
           "@types/seroval",\
@@ -7789,7 +7790,7 @@ const RAW_RUNTIME_STATE =
         "packageDependencies": [\
           ["csstype", "npm:3.2.3"],\
           ["seroval", "npm:1.5.4"],\
-          ["seroval-plugins", "virtual:43f37d33b8b97d6da12c774a7da8b216afc26ea8085bc0715f558f91d3dee1568b44eb8d131c02e2389f002c38a39e3c7cf04f091ce9170de5f93b417dc93ab4#npm:1.5.4"],\
+          ["seroval-plugins", "virtual:1686847b8dbeddc136989e52a1f5c8ac7dec975b1e54cb48ec04a187aee8fc17f805ad8ee3a47074d82eacf5ab4c04f96684d9b636830ae02f0495cdb755e88f#npm:1.5.4"],\
           ["solid-js", "npm:1.9.13"]\
         ],\
         "linkType": "HARD"\
@@ -8700,6 +8701,7 @@ const RAW_RUNTIME_STATE =
           ["@tanstack/react-router-devtools", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.167.0"],\
           ["@tanstack/react-router-ssr-query", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.167.1"],\
           ["@tanstack/react-start", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.168.25"],\
+          ["@tanstack/router-core", "npm:1.171.13"],\
           ["@tanstack/router-plugin", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.168.18"],\
           ["@testing-library/dom", "npm:10.4.1"],\
           ["@testing-library/react", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:16.3.2"],\
