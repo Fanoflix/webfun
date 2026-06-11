@@ -42,6 +42,9 @@ export function useVideoFrames(
       onFrameRef.current(ctx.getImageData(0, 0, w, h).data)
     }
 
+    // Repaint immediately after a scrub so the screen updates even while paused.
+    video.addEventListener("seeked", grab)
+
     if (typeof video.requestVideoFrameCallback === "function") {
       let id = video.requestVideoFrameCallback(function loop() {
         grab()
@@ -50,6 +53,7 @@ export function useVideoFrames(
       return () => {
         stopped = true
         video.cancelVideoFrameCallback(id)
+        video.removeEventListener("seeked", grab)
       }
     }
 
@@ -60,6 +64,7 @@ export function useVideoFrames(
     return () => {
       stopped = true
       cancelAnimationFrame(raf)
+      video.removeEventListener("seeked", grab)
     }
   }, [videoRef])
 }

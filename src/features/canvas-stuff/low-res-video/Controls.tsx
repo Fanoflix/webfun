@@ -26,6 +26,9 @@ type Props = {
   shape: DotShape
   onShapeChange: (shape: DotShape) => void
   onPickFile: (file: File) => void
+  currentTime: number
+  duration: number
+  onSeek: (time: number) => void
 }
 
 export function Controls({
@@ -41,6 +44,9 @@ export function Controls({
   shape,
   onShapeChange,
   onPickFile,
+  currentTime,
+  duration,
+  onSeek,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -82,6 +88,27 @@ export function Controls({
         />
       </div>
 
+      {hasVideo && (
+        <div className="flex items-center gap-2">
+          <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.01}
+            value={Math.min(currentTime, duration || 0)}
+            onChange={(e) => onSeek(e.target.valueAsNumber)}
+            aria-label="Seek"
+            className="h-1 flex-1 cursor-pointer accent-primary"
+          />
+          <span className="w-9 text-xs text-muted-foreground tabular-nums">
+            {formatTime(duration)}
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-x-5 gap-y-4">
         <Range
           label="Columns"
@@ -101,7 +128,7 @@ export function Controls({
           label="Gap"
           value={settings.gap}
           min={0}
-          max={8}
+          max={25}
           unit="px"
           onChange={(gap) => onChange({ gap })}
         />
@@ -109,7 +136,7 @@ export function Controls({
           label="Dot size"
           value={settings.dotSize}
           min={1}
-          max={10}
+          max={100}
           unit="px"
           onChange={(dotSize) => onChange({ dotSize })}
         />
@@ -147,6 +174,13 @@ export function Controls({
       </div>
     </div>
   )
+}
+
+function formatTime(seconds: number) {
+  if (!Number.isFinite(seconds)) return "0:00"
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${s.toString().padStart(2, "0")}`
 }
 
 function Range({
