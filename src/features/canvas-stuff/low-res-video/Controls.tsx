@@ -1,5 +1,13 @@
-import { useRef } from "react"
-import { Pause, Play, Upload, Volume2, VolumeX } from "lucide-react"
+import { useRef, useState } from "react"
+import {
+  Minus,
+  Pause,
+  Play,
+  Plus,
+  Upload,
+  Volume2,
+  VolumeX,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { DotShape } from "./PixelScreen"
@@ -49,9 +57,37 @@ export function Controls({
   onSeek,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
+  const [collapsed, setCollapsed] = useState(false)
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setCollapsed(false)}
+        aria-label="Expand controls"
+        className="fixed top-4 right-4 z-50 grid size-9 place-items-center border border-border bg-background text-muted-foreground shadow-lg hover:text-foreground"
+      >
+        <Plus className="size-4" />
+      </button>
+    )
+  }
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-5">
+    <div className="fixed top-4 right-4 z-50 flex w-80 flex-col gap-3 border border-border bg-background p-3 shadow-lg">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+          Controls
+        </span>
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          aria-label="Collapse controls"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Minus className="size-4" />
+        </button>
+      </div>
+
       <div className="flex gap-2">
         <Button className="flex-1" onClick={() => fileRef.current?.click()}>
           <Upload />
@@ -109,69 +145,65 @@ export function Controls({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-        <Range
-          label="Columns"
-          value={settings.width}
-          min={1}
-          max={900}
-          onChange={(width) => onChange({ width })}
-        />
-        <Range
-          label="Rows"
-          value={settings.height}
-          min={1}
-          max={900}
-          onChange={(height) => onChange({ height })}
-        />
-        <Range
-          label="Gap"
-          value={settings.gap}
-          min={0}
-          max={50}
-          unit="px"
-          onChange={(gap) => onChange({ gap })}
-        />
-        <Range
-          label="Dot size"
-          value={settings.dotSize}
-          min={1}
-          max={100}
-          unit="px"
-          onChange={(dotSize) => onChange({ dotSize })}
-        />
-      </div>
+      <Range
+        label="Columns"
+        value={settings.width}
+        min={1}
+        max={900}
+        onChange={(width) => onChange({ width })}
+      />
+      <Range
+        label="Rows"
+        value={settings.height}
+        min={1}
+        max={900}
+        onChange={(height) => onChange({ height })}
+      />
+      <Range
+        label="Gap"
+        value={settings.gap}
+        min={0}
+        max={50}
+        unit="px"
+        onChange={(gap) => onChange({ gap })}
+      />
+      <Range
+        label="Dot size"
+        value={settings.dotSize}
+        min={1}
+        max={100}
+        unit="px"
+        onChange={(dotSize) => onChange({ dotSize })}
+      />
 
-      <div className="flex items-center justify-between gap-4">
-        <label className="flex cursor-pointer items-center gap-2 select-none">
-          <input
-            type="checkbox"
-            checked={lockAspect}
-            onChange={onToggleLockAspect}
-            className="size-4 accent-primary"
-          />
-          <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-            Keep aspect ratio
-          </span>
-        </label>
+      <label className="flex cursor-pointer items-center justify-between gap-2 select-none">
+        <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+          Keep aspect ratio
+        </span>
+        <input
+          type="checkbox"
+          checked={lockAspect}
+          onChange={onToggleLockAspect}
+          className="size-4 accent-primary"
+        />
+      </label>
 
-        <label className="flex items-center gap-2">
-          <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-            Shape
-          </span>
-          <select
-            value={shape}
-            onChange={(e) => onShapeChange(e.target.value as DotShape)}
-            className="h-8 rounded-none border border-border bg-background px-2 text-xs capitalize outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-          >
-            {SHAPES.map((s) => (
-              <option key={s} value={s} className="capitalize">
-                {s}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <label className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+          Shape
+        </span>
+        <select
+          value={shape}
+          onChange={(e) => onShapeChange(e.target.value as DotShape)}
+          className="h-8 rounded-none border border-border bg-background px-2 text-xs capitalize outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+        >
+          {SHAPES.map((s) => (
+            <option key={s} value={s} className="capitalize">
+              {s}
+            </option>
+          ))}
+        </select>
+      </label>
     </div>
   )
 }
@@ -201,15 +233,9 @@ function Range({
   onChange: (value: number) => void
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="flex items-baseline justify-between">
-        <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-          {label}
-        </span>
-        <span className="text-xs text-foreground tabular-nums">
-          {value}
-          {unit}
-        </span>
+    <label className="flex items-center gap-3">
+      <span className="w-20 shrink-0 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+        {label}
       </span>
       <input
         type="range"
@@ -218,8 +244,12 @@ function Range({
         step={step}
         value={value}
         onChange={(e) => onChange(e.target.valueAsNumber)}
-        className="h-1 w-full cursor-pointer accent-primary"
+        className="h-1 flex-1 cursor-pointer accent-primary"
       />
+      <span className="w-10 shrink-0 text-right text-xs text-foreground tabular-nums">
+        {value}
+        {unit}
+      </span>
     </label>
   )
 }
