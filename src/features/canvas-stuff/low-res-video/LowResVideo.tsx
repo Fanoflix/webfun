@@ -28,6 +28,7 @@ export function LowResVideo() {
   const [lockAspect, setLockAspect] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [videoAspect, setVideoAspect] = useState(16 / 9)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const screenRef = useRef<PixelScreenHandle>(null)
@@ -130,6 +131,7 @@ export function LowResVideo() {
           gap={settings.gap}
           dotSize={settings.dotSize}
           shape={shape}
+          aspect={videoAspect}
         />
         {!hasVideo && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
@@ -173,6 +175,7 @@ export function LowResVideo() {
           if (!video.videoWidth || !video.videoHeight) return
           const ar = video.videoWidth / video.videoHeight
           aspectRef.current = ar
+          setVideoAspect(ar)
           if (lockAspect) {
             setSettings((s) => ({
               ...s,

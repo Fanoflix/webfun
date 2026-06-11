@@ -113,22 +113,22 @@ export function Controls({
         <Range
           label="Columns"
           value={settings.width}
-          min={8}
-          max={1920}
+          min={1}
+          max={900}
           onChange={(width) => onChange({ width })}
         />
         <Range
           label="Rows"
           value={settings.height}
-          min={8}
-          max={1080}
+          min={1}
+          max={900}
           onChange={(height) => onChange({ height })}
         />
         <Range
           label="Gap"
           value={settings.gap}
           min={0}
-          max={25}
+          max={50}
           unit="px"
           onChange={(gap) => onChange({ gap })}
         />
