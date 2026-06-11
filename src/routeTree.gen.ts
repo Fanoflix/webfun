@@ -9,8 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LowResVideoRouteImport } from './routes/low-res-video'
 import { Route as IndexRouteImport } from './routes/index'
 
+const LowResVideoRoute = LowResVideoRouteImport.update({
+  id: '/low-res-video',
+  path: '/low-res-video',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +25,39 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/low-res-video'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/low-res-video'
+  id: '__root__' | '/' | '/low-res-video'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LowResVideoRoute: typeof LowResVideoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/low-res-video': {
+      id: '/low-res-video'
+      path: '/low-res-video'
+      fullPath: '/low-res-video'
+      preLoaderRoute: typeof LowResVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +70,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LowResVideoRoute: LowResVideoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
