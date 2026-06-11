@@ -13,8 +13,8 @@ const DEFAULT_SETTINGS: ScreenSettings = {
   dotSize: 3,
 }
 
-const WIDTH_RANGE = [8, 1920] as const
-const HEIGHT_RANGE = [8, 1080] as const
+const WIDTH_RANGE = [8, 1200] as const
+const HEIGHT_RANGE = [8, 800] as const
 
 const clamp = (n: number, min: number, max: number) =>
   Math.min(max, Math.max(min, n))
@@ -26,6 +26,9 @@ export function LowResVideo() {
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
   const [lockAspect, setLockAspect] = useState(true)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [videoAspect, setVideoAspect] = useState(16 / 9)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const screenRef = useRef<PixelScreenHandle>(null)
@@ -86,6 +89,14 @@ export function LowResVideo() {
     video.src = url
     void video.play().catch(() => {})
     setHasVideo(true)
+    setCurrentTime(0)
+  }
+
+  const seek = (time: number) => {
+    const video = videoRef.current
+    if (!video) return
+    video.currentTime = time
+    setCurrentTime(time)
   }
 
   const togglePlay = () => {
@@ -103,7 +114,7 @@ export function LowResVideo() {
   }
 
   return (
-    <div className="flex w-full max-w-2xl flex-col items-center gap-8">
+    <div className="flex w-full flex-col items-center gap-8">
       <div
         className="relative grid place-items-center overflow-auto rounded-none bg-black p-4"
         onDragOver={(e) => e.preventDefault()}
@@ -120,6 +131,7 @@ export function LowResVideo() {
           gap={settings.gap}
           dotSize={settings.dotSize}
           shape={shape}
+          aspect={videoAspect}
         />
         {!hasVideo && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
@@ -143,6 +155,9 @@ export function LowResVideo() {
         shape={shape}
         onShapeChange={setShape}
         onPickFile={pickFile}
+        currentTime={currentTime}
+        duration={duration}
+        onSeek={seek}
       />
 
       <video
@@ -153,11 +168,14 @@ export function LowResVideo() {
         loop
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
         onLoadedMetadata={(e) => {
           const video = e.currentTarget
           if (!video.videoWidth || !video.videoHeight) return
           const ar = video.videoWidth / video.videoHeight
           aspectRef.current = ar
+          setVideoAspect(ar)
           if (lockAspect) {
             setSettings((s) => ({
               ...s,
