@@ -1,18 +1,16 @@
 import { FloatingPanels } from "@/components/floating-panels/FloatingPanels"
 import { ZoomBox } from "@/components/loupe/ZoomBox"
 import { ZoomSelection } from "@/components/loupe/ZoomSelection"
+import { AACanvas } from "./AACanvas"
 import { Controls } from "./Controls"
-import { DitherCanvas } from "./DitherCanvas"
-import { StatsPanel } from "./StatsPanel"
-import { useDither } from "./useDither"
+import { useAntiAlias } from "./useAntiAlias"
 
-export function Dither() {
+export function AntiAlias() {
   const {
     settings,
-    source,
-    stats,
     comparing,
     collapsed,
+    animating,
     region,
     zoomLevel,
     canvasRef,
@@ -20,50 +18,32 @@ export function Dither() {
     displayWidth,
     displayHeight,
     onChange,
-    pickFile,
     exportPng,
     setComparing,
     setCollapsed,
+    setAnimating,
     setRegion,
     setZoomLevel,
-  } = useDither()
+  } = useAntiAlias()
 
   return (
     <div className="flex w-full justify-center">
-      <div
-        className="relative grid place-items-center bg-black p-4"
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault()
-          const file = e.dataTransfer.files.item(0)
-          if (file && file.type.startsWith("image/")) pickFile(file)
-        }}
-      >
-        <DitherCanvas
+      <div className="relative grid place-items-center bg-black p-4">
+        <AACanvas
           ref={canvasRef}
-          originalUrl={source?.url ?? null}
           comparing={comparing}
           displayWidth={displayWidth}
           displayHeight={displayHeight}
           onHoldStart={() => setComparing(true)}
           onHoldEnd={() => setComparing(false)}
         >
-          {source && (
-            <ZoomSelection
-              region={region}
-              width={displayWidth}
-              height={displayHeight}
-              onChange={setRegion}
-            />
-          )}
-        </DitherCanvas>
-        {!source && (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <p className="text-xs tracking-widest text-white/50 uppercase">
-              Drop an image or click upload
-            </p>
-          </div>
-        )}
+          <ZoomSelection
+            region={region}
+            width={displayWidth}
+            height={displayHeight}
+            onChange={setRegion}
+          />
+        </AACanvas>
       </div>
 
       <FloatingPanels
@@ -73,8 +53,8 @@ export function Dither() {
         <Controls
           settings={settings}
           onChange={onChange}
-          hasImage={!!source}
-          onPickFile={pickFile}
+          animating={animating}
+          onToggleAnimate={setAnimating}
           onExport={exportPng}
           onCompareStart={() => setComparing(true)}
           onCompareEnd={() => setComparing(false)}
@@ -84,9 +64,7 @@ export function Dither() {
           loupeRef={loupeRef}
           zoomLevel={zoomLevel}
           onZoomLevelChange={setZoomLevel}
-          disabled={!source}
         />
-        <StatsPanel stats={stats} />
       </FloatingPanels>
     </div>
   )

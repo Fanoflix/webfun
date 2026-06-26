@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Grip, MonitorPlay } from "lucide-react"
+import { Grip, MonitorPlay, Spline } from "lucide-react"
 
 /**
  * A single L1 sidebar entry. We're flat for now, but the shape is kept small so
@@ -25,4 +25,5 @@ export type NavGroup = {
 export const navItems: NavItem[] = [
   { title: "Low Res Video", to: "/low-res-video", icon: MonitorPlay },
   { title: "Dithering", to: "/dithering", icon: Grip },
+  { title: "Anti-aliasing", to: "/anti-aliasing", icon: Spline },
 ]

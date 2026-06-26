@@ -1,23 +1,32 @@
 import { useEffect, useRef, useState } from "react"
 
+import type { Region } from "@/components/loupe/region"
 import type { DitherCanvasHandle } from "./DitherCanvas"
 import { countUniqueColors, dither } from "./pipeline"
 import type { DitherSettings } from "./pipeline"
 
 const DEFAULT_SETTINGS: DitherSettings = {
   algorithm: "floyd",
-  colorMode: "grayscale",
-  levels: 2,
-  pixelScale: 3,
+  colorMode: "rgb",
+  levels: 9,
+  pixelScale: 1,
   contrast: 0,
   invert: false,
 }
 
-// Longest side of the working buffer before `pixelScale` divides it further,
-// and the bounding box the result is displayed within.
-const MAX_WORK = 1000
+// The bounding box the result is displayed within (the backing buffer stays at
+// full source resolution — the loupe is how you inspect it pixel-for-pixel).
 const MAX_DISPLAY_W = 900
 const MAX_DISPLAY_H = 600
+
+// Side of the (square) loupe canvas, in device pixels.
+const LOUPE_SIZE = 288
+
+const MIN_ZOOM = 1
+const MAX_ZOOM = 32
+
+const clamp = (v: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, v))
 
 type Source = { url: string; w: number; h: number }
 
@@ -31,11 +40,23 @@ export type DitherStats = {
   uniqueColors: number
 }
 
+/** Working resolution for a given source + pixel size (matches the dither). */
+const workDims = (source: Source, pixelScale: number) => ({
+  w: Math.max(1, Math.round(source.w / pixelScale)),
+  h: Math.max(1, Math.round(source.h / pixelScale)),
+})
+
 /**
  * All of the dithering screen's state and behaviour: source image loading, the
- * (debounced) downsample → dither → paint pipeline, the stats readout, and the
- * derived display size. The view binds `canvasRef` to the canvas and renders
- * everything else from the returned values.
+ * (debounced) full-resolution dither → paint pipeline, the stats readout, the
+ * loupe (a magnified view of a selectable region), and the derived display
+ * size. The view binds `canvasRef`/`loupeRef` to canvases and renders the rest.
+ *
+ * The loupe selection is intentionally _derived_, not stored: we keep its
+ * `center` and the `zoomLevel`, and compute a square region from them. That
+ * makes the selection always 1:1 (so the square loupe is fully filled) and
+ * locks its size to the zoom — a bigger selection means a lower zoom, and the
+ * other way around.
  */
 export function useDither() {
   const [settings, setSettings] = useState<DitherSettings>(DEFAULT_SETTINGS)
@@ -43,11 +64,18 @@ export function useDither() {
   const [comparing, setComparing] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [stats, setStats] = useState<DitherStats | null>(null)
+  // Normalised centre of the loupe selection; the square region is derived from
+  // this plus the zoom (which fixes the side length).
+  const [center, setCenter] = useState({ x: 0.5, y: 0.5 })
+  const [zoomLevel, setZoomLevel] = useState(8)
+  // Bumped each time the main canvas is repainted, so the loupe can refresh.
+  const [frameVersion, setFrameVersion] = useState(0)
 
   const imgRef = useRef<HTMLImageElement | null>(null)
   const urlRef = useRef<string | null>(null)
   const canvasRef = useRef<DitherCanvasHandle>(null)
   const workRef = useRef<HTMLCanvasElement | null>(null)
+  const loupeRef = useRef<HTMLCanvasElement>(null)
 
   // Release the last object URL on unmount.
   useEffect(
@@ -64,15 +92,7 @@ export function useDither() {
     if (!source || !img) return
 
     const id = setTimeout(() => {
-      const baseScale = Math.min(1, MAX_WORK / Math.max(source.w, source.h))
-      const workW = Math.max(
-        1,
-        Math.round((source.w * baseScale) / settings.pixelScale)
-      )
-      const workH = Math.max(
-        1,
-        Math.round((source.h * baseScale) / settings.pixelScale)
-      )
+      const { w: workW, h: workH } = workDims(source, settings.pixelScale)
 
       const work = (workRef.current ??= document.createElement("canvas"))
       work.width = workW
@@ -91,12 +111,103 @@ export function useDither() {
         outH: workH,
         uniqueColors: countUniqueColors(out),
       })
+      setFrameVersion((v) => v + 1)
     }, 60)
     return () => clearTimeout(id)
   }, [source, settings])
 
+  // The square selection, derived from the centre + zoom. The side (in working
+  // pixels) is `LOUPE_SIZE / zoom`, clamped to fit the image; normalising it by
+  // each axis keeps it a true square on screen (and in the source pixels).
+  const dims = source ? workDims(source, settings.pixelScale) : null
+  let region: Region = { x: 0.42, y: 0.42, w: 0.16, h: 0.16 }
+  if (dims) {
+    const maxSide = Math.min(dims.w, dims.h)
+    const minSide = Math.min(LOUPE_SIZE / MAX_ZOOM, maxSide)
+    const sideWork = clamp(LOUPE_SIZE / zoomLevel, minSide, maxSide)
+    const w = sideWork / dims.w
+    const h = sideWork / dims.h
+    region = {
+      x: clamp(center.x - w / 2, 0, 1 - w),
+      y: clamp(center.y - h / 2, 0, 1 - h),
+      w,
+      h,
+    }
+  }
+
+  // Redraw the loupe whenever the frame, the selection, or the compare state
+  // changes. The selection is square, so it always fills the square loupe
+  // exactly; nearest-neighbour keeps the dithered dots crisp under
+  // magnification. While holding to compare we sample the original image
+  // instead — same region, for a like-for-like before/after.
+  useEffect(() => {
+    const loupe = loupeRef.current
+    const main = canvasRef.current?.getCanvas()
+    const original = imgRef.current
+    if (!loupe || !main || !source) return
+    const d = workDims(source, settings.pixelScale)
+
+    if (loupe.width !== LOUPE_SIZE) loupe.width = LOUPE_SIZE
+    if (loupe.height !== LOUPE_SIZE) loupe.height = LOUPE_SIZE
+    const ctx = loupe.getContext("2d")
+    if (!ctx) return
+    ctx.imageSmoothingEnabled = false
+    ctx.clearRect(0, 0, LOUPE_SIZE, LOUPE_SIZE)
+
+    if (comparing && original) {
+      ctx.drawImage(
+        original,
+        region.x * source.w,
+        region.y * source.h,
+        Math.max(1, region.w * source.w),
+        Math.max(1, region.h * source.h),
+        0,
+        0,
+        LOUPE_SIZE,
+        LOUPE_SIZE
+      )
+    } else {
+      ctx.drawImage(
+        main,
+        region.x * d.w,
+        region.y * d.h,
+        Math.max(1, region.w * d.w),
+        Math.max(1, region.h * d.h),
+        0,
+        0,
+        LOUPE_SIZE,
+        LOUPE_SIZE
+      )
+    }
+    // region is derived from these; depending on its parts keeps deps honest.
+  }, [
+    region.x,
+    region.y,
+    region.w,
+    region.h,
+    frameVersion,
+    comparing,
+    source,
+    settings.pixelScale,
+  ])
+
   const onChange = (patch: Partial<DitherSettings>) =>
     setSettings((s) => ({ ...s, ...patch }))
+
+  // Move/resize the selection on the image. We only persist the centre; the
+  // size is converted into a zoom level so the two stay locked together.
+  const setRegion = (next: Region) => {
+    setCenter({ x: next.x + next.w / 2, y: next.y + next.h / 2 })
+    if (!dims) return
+    const maxSide = Math.min(dims.w, dims.h)
+    const minSide = Math.min(LOUPE_SIZE / MAX_ZOOM, maxSide)
+    const sideWork = clamp(next.w * dims.w, minSide, maxSide)
+    setZoomLevel(clamp(LOUPE_SIZE / sideWork, MIN_ZOOM, MAX_ZOOM))
+  }
+
+  // Zoom from the slider: clamped, with the selection re-derived around it.
+  const setZoom = (value: number) =>
+    setZoomLevel(clamp(value, MIN_ZOOM, MAX_ZOOM))
 
   const pickFile = (file: File) => {
     if (urlRef.current) URL.revokeObjectURL(urlRef.current)
@@ -127,7 +238,10 @@ export function useDither() {
     stats,
     comparing,
     collapsed,
+    region,
+    zoomLevel,
     canvasRef,
+    loupeRef,
     displayWidth: Math.round(displayW),
     displayHeight: Math.round(displayH),
     onChange,
@@ -135,5 +249,7 @@ export function useDither() {
     exportPng,
     setComparing,
     setCollapsed,
+    setRegion,
+    setZoomLevel: setZoom,
   }
 }

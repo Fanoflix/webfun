@@ -1,11 +1,13 @@
 import { useImperativeHandle, useRef } from "react"
-import type { PointerEvent as ReactPointerEvent, Ref } from "react"
+import type { PointerEvent as ReactPointerEvent, ReactNode, Ref } from "react"
 
 export type DitherCanvasHandle = {
   /** Push a processed RGBA buffer (`w*h*4`) onto the screen. */
   paint: (data: Uint8ClampedArray, w: number, h: number) => void
   /** Download the last painted frame as a PNG. */
   exportPng: (filename: string) => void
+  /** The backing canvas, so the loupe can sample its pixels. */
+  getCanvas: () => HTMLCanvasElement | null
 }
 
 type Props = {
@@ -16,6 +18,8 @@ type Props = {
   displayHeight: number
   onHoldStart: () => void
   onHoldEnd: () => void
+  /** Overlays positioned over the image (e.g. the loupe selection). */
+  children?: ReactNode
   ref?: Ref<DitherCanvasHandle>
 }
 
@@ -31,6 +35,7 @@ export function DitherCanvas({
   displayHeight,
   onHoldStart,
   onHoldEnd,
+  children,
   ref,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -38,6 +43,7 @@ export function DitherCanvas({
   useImperativeHandle(
     ref,
     () => ({
+      getCanvas: () => canvasRef.current,
       paint(data, w, h) {
         const canvas = canvasRef.current
         if (!canvas || w < 1 || h < 1) return
@@ -94,6 +100,7 @@ export function DitherCanvas({
           className="pointer-events-none absolute inset-0 h-full w-full object-fill"
         />
       )}
+      {children}
     </div>
   )
 }
