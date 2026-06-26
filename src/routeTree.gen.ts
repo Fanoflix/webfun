@@ -10,11 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LowResVideoRouteImport } from './routes/low-res-video'
+import { Route as DitheringRouteImport } from './routes/dithering'
+import { Route as AntiAliasingRouteImport } from './routes/anti-aliasing'
 import { Route as IndexRouteImport } from './routes/index'
 
 const LowResVideoRoute = LowResVideoRouteImport.update({
   id: '/low-res-video',
   path: '/low-res-video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DitheringRoute = DitheringRouteImport.update({
+  id: '/dithering',
+  path: '/dithering',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AntiAliasingRoute = AntiAliasingRouteImport.update({
+  id: '/anti-aliasing',
+  path: '/anti-aliasing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +37,35 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/anti-aliasing': typeof AntiAliasingRoute
+  '/dithering': typeof DitheringRoute
   '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/anti-aliasing': typeof AntiAliasingRoute
+  '/dithering': typeof DitheringRoute
   '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/anti-aliasing': typeof AntiAliasingRoute
+  '/dithering': typeof DitheringRoute
   '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/low-res-video'
+  fullPaths: '/' | '/anti-aliasing' | '/dithering' | '/low-res-video'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/low-res-video'
-  id: '__root__' | '/' | '/low-res-video'
+  to: '/' | '/anti-aliasing' | '/dithering' | '/low-res-video'
+  id: '__root__' | '/' | '/anti-aliasing' | '/dithering' | '/low-res-video'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AntiAliasingRoute: typeof AntiAliasingRoute
+  DitheringRoute: typeof DitheringRoute
   LowResVideoRoute: typeof LowResVideoRoute
 }
 
@@ -56,6 +76,20 @@ declare module '@tanstack/react-router' {
       path: '/low-res-video'
       fullPath: '/low-res-video'
       preLoaderRoute: typeof LowResVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dithering': {
+      id: '/dithering'
+      path: '/dithering'
+      fullPath: '/dithering'
+      preLoaderRoute: typeof DitheringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/anti-aliasing': {
+      id: '/anti-aliasing'
+      path: '/anti-aliasing'
+      fullPath: '/anti-aliasing'
+      preLoaderRoute: typeof AntiAliasingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +104,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AntiAliasingRoute: AntiAliasingRoute,
+  DitheringRoute: DitheringRoute,
   LowResVideoRoute: LowResVideoRoute,
 }
 export const routeTree = rootRouteImport

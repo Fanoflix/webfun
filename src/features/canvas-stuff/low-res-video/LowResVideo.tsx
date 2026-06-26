@@ -1,117 +1,28 @@
-import { useEffect, useRef, useState } from "react"
-
 import { Controls } from "./Controls"
-import type { ScreenSettings } from "./Controls"
 import { PixelScreen } from "./PixelScreen"
-import type { DotShape, PixelScreenHandle } from "./PixelScreen"
-import { useVideoFrames } from "./useVideoFrames"
-
-const DEFAULT_SETTINGS: ScreenSettings = {
-  width: 64,
-  height: 36,
-  gap: 2,
-  dotSize: 3,
-}
-
-const WIDTH_RANGE = [8, 1200] as const
-const HEIGHT_RANGE = [8, 800] as const
-
-const clamp = (n: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, n))
+import { useLowResVideo } from "./useLowResVideo"
 
 export function LowResVideo() {
-  const [settings, setSettings] = useState<ScreenSettings>(DEFAULT_SETTINGS)
-  const [shape, setShape] = useState<DotShape>("circle")
-  const [hasVideo, setHasVideo] = useState(false)
-  const [playing, setPlaying] = useState(false)
-  const [muted, setMuted] = useState(true)
-  const [lockAspect, setLockAspect] = useState(true)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [videoAspect, setVideoAspect] = useState(16 / 9)
-
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const screenRef = useRef<PixelScreenHandle>(null)
-  const urlRef = useRef<string | null>(null)
-  // The video's native aspect ratio, once metadata has loaded.
-  const aspectRef = useRef<number | null>(null)
-
-  useVideoFrames(videoRef, settings.width, settings.height, (data) =>
-    screenRef.current?.paint(data)
-  )
-
-  // Release the last object URL when we're done with it.
-  useEffect(
-    () => () => {
-      if (urlRef.current) URL.revokeObjectURL(urlRef.current)
-    },
-    []
-  )
-
-  // Apply a settings change, deriving the dependent dimension from the video's
-  // aspect ratio when the lock is on so the screen keeps the original shape.
-  const applyPatch = (patch: Partial<ScreenSettings>) => {
-    setSettings((s) => {
-      const next = { ...s, ...patch }
-      const ar = aspectRef.current
-      if (lockAspect && ar) {
-        if (patch.width !== undefined) {
-          next.height = clamp(Math.round(patch.width / ar), ...HEIGHT_RANGE)
-        } else if (patch.height !== undefined) {
-          next.width = clamp(Math.round(patch.height * ar), ...WIDTH_RANGE)
-        }
-      }
-      return next
-    })
-  }
-
-  const toggleLockAspect = () => {
-    setLockAspect((locked) => {
-      const nextLocked = !locked
-      const ar = aspectRef.current
-      // Snap to the original ratio the moment the lock is switched on.
-      if (nextLocked && ar) {
-        setSettings((s) => ({
-          ...s,
-          height: clamp(Math.round(s.width / ar), ...HEIGHT_RANGE),
-        }))
-      }
-      return nextLocked
-    })
-  }
-
-  const pickFile = (file: File) => {
-    const video = videoRef.current
-    if (!video) return
-    if (urlRef.current) URL.revokeObjectURL(urlRef.current)
-    const url = URL.createObjectURL(file)
-    urlRef.current = url
-    video.src = url
-    void video.play().catch(() => {})
-    setHasVideo(true)
-    setCurrentTime(0)
-  }
-
-  const seek = (time: number) => {
-    const video = videoRef.current
-    if (!video) return
-    video.currentTime = time
-    setCurrentTime(time)
-  }
-
-  const togglePlay = () => {
-    const video = videoRef.current
-    if (!video) return
-    if (video.paused) void video.play().catch(() => {})
-    else video.pause()
-  }
-
-  const toggleMute = () => {
-    const video = videoRef.current
-    if (!video) return
-    video.muted = !video.muted
-    setMuted(video.muted)
-  }
+  const {
+    settings,
+    shape,
+    hasVideo,
+    playing,
+    muted,
+    lockAspect,
+    currentTime,
+    duration,
+    videoAspect,
+    videoRef,
+    screenRef,
+    onChange,
+    setShape,
+    toggleLockAspect,
+    pickFile,
+    seek,
+    togglePlay,
+    toggleMute,
+  } = useLowResVideo()
 
   return (
     <div className="flex w-full flex-col items-center gap-8">
@@ -144,7 +55,7 @@ export function LowResVideo() {
 
       <Controls
         settings={settings}
-        onChange={applyPatch}
+        onChange={onChange}
         hasVideo={hasVideo}
         playing={playing}
         onTogglePlay={togglePlay}
@@ -160,30 +71,7 @@ export function LowResVideo() {
         onSeek={seek}
       />
 
-      <video
-        ref={videoRef}
-        className="hidden"
-        muted={muted}
-        playsInline
-        loop
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-        onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
-        onLoadedMetadata={(e) => {
-          const video = e.currentTarget
-          if (!video.videoWidth || !video.videoHeight) return
-          const ar = video.videoWidth / video.videoHeight
-          aspectRef.current = ar
-          setVideoAspect(ar)
-          if (lockAspect) {
-            setSettings((s) => ({
-              ...s,
-              height: clamp(Math.round(s.width / ar), ...HEIGHT_RANGE),
-            }))
-          }
-        }}
-      />
+      <video ref={videoRef} className="hidden" playsInline loop muted />
     </div>
   )
 }

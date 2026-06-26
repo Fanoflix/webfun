@@ -5,8 +5,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/features/sidebar"
-import { ThemeToggle } from "@/features/theme"
+import { AppSidebar } from "@/features/sidebar/AppSidebar"
+import { ThemeToggle } from "@/features/theme/ThemeToggle"
 
 export function AppLayout() {
   return (
