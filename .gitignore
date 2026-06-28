@@ -13,3 +13,6 @@ todos.json
 
 # typescript
 *.tsbuildinfo
+
+# private reel scripts (per-tool)
+short-demo.md
