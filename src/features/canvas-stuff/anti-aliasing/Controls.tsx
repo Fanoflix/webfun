@@ -100,7 +100,9 @@ export function Controls({
         value={settings.angle}
         min={0}
         max={360}
+        step={0.1}
         unit="°"
+        format={(v) => v.toFixed(1)}
         onChange={(angle) => onChange({ angle })}
       />
       <Range
@@ -110,6 +112,7 @@ export function Controls({
         max={0.95}
         step={0.01}
         format={(v) => v.toFixed(2)}
+        disabled={settings.scene === "line"}
         onChange={(size) => onChange({ size })}
       />
       <Range
@@ -145,6 +148,7 @@ function Range({
   step = 1,
   unit,
   format,
+  disabled = false,
   onChange,
 }: {
   label: string
@@ -154,10 +158,13 @@ function Range({
   step?: number
   unit?: string
   format?: (value: number) => string
+  disabled?: boolean
   onChange: (value: number) => void
 }) {
   return (
-    <label className="flex items-center gap-3">
+    <label
+      className={`flex items-center gap-3 ${disabled ? "opacity-40" : ""}`}
+    >
       <span className="w-20 shrink-0 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
         {label}
       </span>
@@ -167,8 +174,9 @@ function Range({
         max={max}
         step={step}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.valueAsNumber)}
-        className="h-1 flex-1 cursor-pointer accent-primary"
+        className="h-1 flex-1 cursor-pointer accent-primary disabled:cursor-not-allowed"
       />
       <span className="w-14 shrink-0 text-right text-xs text-foreground tabular-nums">
         {format ? format(value) : value}

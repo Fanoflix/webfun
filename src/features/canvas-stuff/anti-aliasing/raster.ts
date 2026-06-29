@@ -4,9 +4,16 @@
 // one sample the edge is hard (aliased); with more, edge pixels take fractional
 // coverage and the jaggies dissolve into a smooth gradient (supersampled AA).
 
-export type Scene = "edge" | "circle" | "triangle" | "pentagon" | "checker"
+export type Scene =
+  | "line"
+  | "edge"
+  | "circle"
+  | "triangle"
+  | "pentagon"
+  | "checker"
 
 export const SCENES: { value: Scene; label: string }[] = [
+  { value: "line", label: "Diagonal line" },
   { value: "edge", label: "Slanted edge" },
   { value: "circle", label: "Circle" },
   { value: "triangle", label: "Triangle" },
@@ -45,9 +52,22 @@ function insidePolygon(u: number, v: number, n: number, r: number) {
   return true
 }
 
-/** `(u, v)` are centred, rotation-applied, normalised so the short axis is 1. */
-function inside(scene: Scene, u: number, v: number, size: number) {
+/**
+ * `(u, v)` are centred, rotation-applied, normalised so the short axis is 1.
+ * `pxNorm` is the width of one output pixel in those same units.
+ */
+function inside(
+  scene: Scene,
+  u: number,
+  v: number,
+  size: number,
+  pxNorm: number
+) {
   switch (scene) {
+    case "line":
+      // Exactly one pixel thick, so you can watch a thin line get
+      // anti-aliased. `size` doesn't affect it.
+      return Math.abs(v) <= 0.5 * pxNorm
     case "edge":
       return v >= 0
     case "circle":
@@ -67,6 +87,8 @@ function inside(scene: Scene, u: number, v: number, size: number) {
 export function render(w: number, h: number, s: AASettings): Uint8ClampedArray {
   const out = new Uint8ClampedArray(w * h * 4)
   const half = Math.min(w, h) / 2
+  // One output pixel, measured in the normalised (u, v) units inside().
+  const pxNorm = 1 / half
   const rad = (s.angle * Math.PI) / 180
   const cos = Math.cos(rad)
   const sin = Math.sin(rad)
@@ -83,7 +105,7 @@ export function render(w: number, h: number, s: AASettings): Uint8ClampedArray {
           const v = (py + (sy + 0.5) * inv - h / 2) / half
           const ru = u * cos + v * sin
           const rv = -u * sin + v * cos
-          if (inside(s.scene, ru, rv, s.size)) cov++
+          if (inside(s.scene, ru, rv, s.size, pxNorm)) cov++
         }
       }
       const a = cov / total
