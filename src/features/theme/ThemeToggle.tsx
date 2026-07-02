@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react"
 import { Moon, Sun } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { applyTheme, getStoredTheme } from "./theme"
 import type { Theme } from "./theme"
 
+/**
+ * A labelled pill that toggles the theme and reads the current mode ("dark" /
+ * "light"). Rendered in the sidebar footer next to the contribute link.
+ */
 export function ThemeToggle() {
   // Server + first client render assume the default (dark); the effect syncs to
   // whatever was actually persisted, matching the no-flash head script.
@@ -21,13 +24,18 @@ export function ThemeToggle() {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <button
+      type="button"
       onClick={toggle}
       aria-label="Toggle theme"
+      className="flex items-center gap-1.5 rounded-md border border-sidebar-border px-2.5 py-1.5 text-xs text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
     >
-      {theme === "dark" ? <Sun /> : <Moon />}
-    </Button>
+      {theme === "dark" ? (
+        <Moon className="size-3.5" />
+      ) : (
+        <Sun className="size-3.5" />
+      )}
+      {theme}
+    </button>
   )
 }
