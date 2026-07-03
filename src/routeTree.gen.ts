@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LowResVideoRouteImport } from './routes/low-res-video'
+import { Route as FutureTableRouteImport } from './routes/future-table'
 import { Route as DitheringRouteImport } from './routes/dithering'
 import { Route as AntiAliasingRouteImport } from './routes/anti-aliasing'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const LowResVideoRoute = LowResVideoRouteImport.update({
   id: '/low-res-video',
   path: '/low-res-video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FutureTableRoute = FutureTableRouteImport.update({
+  id: '/future-table',
+  path: '/future-table',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DitheringRoute = DitheringRouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/anti-aliasing': typeof AntiAliasingRoute
   '/dithering': typeof DitheringRoute
+  '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/anti-aliasing': typeof AntiAliasingRoute
   '/dithering': typeof DitheringRoute
+  '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/anti-aliasing': typeof AntiAliasingRoute
   '/dithering': typeof DitheringRoute
+  '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/anti-aliasing' | '/dithering' | '/low-res-video'
+  fullPaths:
+    | '/'
+    | '/anti-aliasing'
+    | '/dithering'
+    | '/future-table'
+    | '/low-res-video'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/anti-aliasing' | '/dithering' | '/low-res-video'
-  id: '__root__' | '/' | '/anti-aliasing' | '/dithering' | '/low-res-video'
+  to: '/' | '/anti-aliasing' | '/dithering' | '/future-table' | '/low-res-video'
+  id:
+    | '__root__'
+    | '/'
+    | '/anti-aliasing'
+    | '/dithering'
+    | '/future-table'
+    | '/low-res-video'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AntiAliasingRoute: typeof AntiAliasingRoute
   DitheringRoute: typeof DitheringRoute
+  FutureTableRoute: typeof FutureTableRoute
   LowResVideoRoute: typeof LowResVideoRoute
 }
 
@@ -76,6 +97,13 @@ declare module '@tanstack/react-router' {
       path: '/low-res-video'
       fullPath: '/low-res-video'
       preLoaderRoute: typeof LowResVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/future-table': {
+      id: '/future-table'
+      path: '/future-table'
+      fullPath: '/future-table'
+      preLoaderRoute: typeof FutureTableRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dithering': {
@@ -106,6 +134,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AntiAliasingRoute: AntiAliasingRoute,
   DitheringRoute: DitheringRoute,
+  FutureTableRoute: FutureTableRoute,
   LowResVideoRoute: LowResVideoRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Grip, MonitorPlay, Spline } from "lucide-react"
+import { Grip, MonitorPlay, Spline, Table2 } from "lucide-react"
 
 /**
  * A single sidebar entry. `keywords` are hidden search aliases — terms a person
@@ -73,6 +73,25 @@ export const navGroups: NavGroup[] = [
           "mosaic",
           "downscale",
           "retro",
+        ],
+      },
+    ],
+  },
+  {
+    label: "Speculative UI",
+    items: [
+      {
+        title: "Future Table",
+        to: "/future-table",
+        icon: Table2,
+        keywords: [
+          "fixed rows",
+          "departure board",
+          "split flap",
+          "slots",
+          "pagination",
+          "placeholder",
+          "future ui",
         ],
       },
     ],
