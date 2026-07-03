@@ -17,6 +17,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { ThemeToggle } from "@/features/theme/ThemeToggle"
 import { GithubMark } from "./GithubMark"
@@ -30,11 +31,13 @@ export function AppSidebar() {
   const { query, setQuery, groups, isOpen, toggle } = useSidebarNav()
 
   return (
-    // Floating gap on the left and Y sides (overrides the variant's p-2).
-    <Sidebar variant="floating" className="p-12">
+    <Sidebar variant="floating" className="p-4">
       <SidebarHeader className="gap-2">
-        <div className="px-1 py-1 text-sm font-semibold tracking-widest uppercase">
-          webfun
+        <div className="flex items-center justify-between">
+          <div className="px-1 py-1 text-sm font-semibold tracking-widest uppercase">
+            webfun
+          </div>
+          <SidebarTrigger />
         </div>
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -56,7 +59,7 @@ export function AppSidebar() {
             onOpenChange={(open) => toggle(group.label, open)}
           >
             <SidebarGroup className="py-0.5">
-              <CollapsibleTrigger className="group/trigger flex h-8 w-full items-center rounded-md px-2 text-xs font-semibold tracking-wider text-sidebar-foreground/70 uppercase transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <CollapsibleTrigger className="group/trigger flex h-8 w-full items-center px-2 text-xs font-semibold tracking-wider text-sidebar-foreground/70 uppercase transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 {group.label}
                 <Plus className="ml-auto size-4 transition-transform duration-200 group-data-[panel-open]/trigger:rotate-45" />
               </CollapsibleTrigger>
@@ -89,7 +92,7 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="gap-2">
+      <SidebarFooter className="gap-1.5 p-1.5">
         <a
           href={SITE_URL}
           target="_blank"
@@ -103,7 +106,7 @@ export function AppSidebar() {
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-sidebar-border px-2.5 py-1.5 text-xs whitespace-nowrap text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="flex flex-1 items-center justify-center gap-1.5 border border-sidebar-border px-2.5 py-1.5 text-xs whitespace-nowrap text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <Star className="size-3.5" />
             star // contribute
