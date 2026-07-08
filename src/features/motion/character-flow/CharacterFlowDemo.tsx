@@ -69,7 +69,7 @@ export function CharacterFlowDemo() {
                 advance()
               }
             }}
-            className="flex min-h-40 cursor-pointer [scrollbar-width:none] items-center [justify-content:safe_center] overflow-x-auto border border-border bg-card/75 px-6 py-10 select-none [&::-webkit-scrollbar]:hidden"
+            className="flex min-h-40 cursor-pointer [scrollbar-width:none] items-center [justify-content:safe_center] overflow-x-auto border border-border px-6 py-10 select-none [&::-webkit-scrollbar]:hidden"
           >
             <CharacterFlow
               value={value}
@@ -118,7 +118,7 @@ export function CharacterFlowDemo() {
           <motion.div
             key="wheel"
             initial={{ opacity: 0, width: 0, marginLeft: 0, height: 0 }}
-            animate={{ opacity: 1, width: 176, marginLeft: 32, height: 448 }}
+            animate={{ opacity: 1, width: 176, marginLeft: 12, height: 339 }}
             exit={{ opacity: 0, width: 0, marginLeft: 0, height: 0 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="shrink-0 overflow-hidden"

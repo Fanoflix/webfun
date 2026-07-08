@@ -27,7 +27,7 @@ export function WordWheel({
 }: WordWheelProps) {
   const canRemove = words.length > 1
   return (
-    <div className="relative h-full w-full overflow-hidden border border-border bg-card [mask-image:linear-gradient(to_bottom,transparent,black_22%,black_78%,transparent)]">
+    <div className="relative h-full w-full overflow-hidden border border-border [mask-image:linear-gradient(to_bottom,transparent,black_50%,black_55%,transparent)]">
       <motion.div
         className="absolute inset-x-0 top-1/2 flex flex-col"
         animate={{ y: -index * ROW_H - ROW_H }}
@@ -67,7 +67,7 @@ export function WordWheel({
                     type="button"
                     onClick={() => onRemove(i)}
                     aria-label={`Remove ${word}`}
-                    className="absolute top-1/2 left-[80%] grid size-7 -translate-y-1/2 place-items-center bg-card text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+                    className="absolute top-1/2 left-[80%] grid size-7 -translate-y-1/2 place-items-center text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
                   >
                     <X className="size-4" />
                   </button>
