@@ -5,8 +5,20 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/features/sidebar/AppSidebar"
+
+/**
+ * The toggle lives *inside* the sidebar while it's open; this one shows in the
+ * main header only when the sidebar is collapsed (or on mobile, where the panel
+ * is an off-screen sheet) so there's always a way back to it.
+ */
+function InsetSidebarTrigger() {
+  const { state, isMobile } = useSidebar()
+  if (!isMobile && state !== "collapsed") return null
+  return <SidebarTrigger />
+}
 
 export function AppLayout() {
   return (
@@ -20,7 +32,7 @@ export function AppLayout() {
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-12 shrink-0 items-center gap-2 px-3">
-          <SidebarTrigger />
+          <InsetSidebarTrigger />
         </header>
         <main className="flex flex-1 items-center justify-center p-6">
           <Outlet />
