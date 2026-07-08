@@ -1,11 +1,7 @@
 import { useEffect, useRef } from "react"
+import type { MutableRefObject } from "react"
 import type { Easing } from "motion/react"
-import {
-  AnimatePresence,
-  motion,
-  useIsPresent,
-  useReducedMotion,
-} from "motion/react"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -78,7 +74,8 @@ export type CharacterFlowProps = {
   respectMotionPreference?: boolean
 }
 
-type KeyedChar = { key: string; char: string }
+/** One character position, carrying an id that is stable across value changes. */
+type Slot = { id: number; char: string }
 
 const DEFAULT_EASE: Easing = [0.22, 1, 0.36, 1]
 /** Default vertical travel of a roll, in `em`, before `distanceScale` scales it. */
@@ -87,18 +84,67 @@ const DEFAULT_ROLL_DISTANCE = 0.7
 const DEFAULT_LAYOUT_DURATION = 0.3
 
 /**
- * Splits a string into characters, giving each a key by *identity, not index*:
- * the Nth occurrence of a character always gets the same key across renders. So
- * a character that survives an edit keeps its key and animates from its old
- * position to its new one, while genuinely-new/removed characters enter/exit.
- * `Array.from` (not `split("")`) so surrogate pairs / emoji stay one unit.
+ * Longest-common-subsequence anchors between two glyph arrays, as `(ai, bi)`
+ * index pairs in increasing order — the characters that are genuinely the *same*
+ * across the change (e.g. the "Lich" run shared by two words). Order-preserving,
+ * so anchors never cross, and contiguous runs match as a block.
  */
-function toKeyedChars(value: string): KeyedChar[] {
-  const seen = new Map<string, number>()
-  return Array.from(value).map((char) => {
-    const n = seen.get(char) ?? 0
-    seen.set(char, n + 1)
-    return { key: `${char}#${n}`, char }
+function lcsPairs(a: string[], b: string[]): { ai: number; bi: number }[] {
+  const n = a.length
+  const m = b.length
+  const dp: number[][] = Array.from({ length: n + 1 }, () =>
+    new Array<number>(m + 1).fill(0)
+  )
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] =
+        a[i] === b[j]
+          ? dp[i + 1][j + 1] + 1
+          : Math.max(dp[i + 1][j], dp[i][j + 1])
+    }
+  }
+  const pairs: { ai: number; bi: number }[] = []
+  let i = 0
+  let j = 0
+  while (i < n && j < m) {
+    if (a[i] === b[j]) {
+      pairs.push({ ai: i, bi: j })
+      i++
+      j++
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      i++
+    } else {
+      j++
+    }
+  }
+  return pairs
+}
+
+/**
+ * Assign each character of `value` a slot: matched characters (per LCS against
+ * the previously-shown slots) keep the old slot's id so they animate as the same
+ * element, and only genuinely new characters get a fresh id. This is what keeps a
+ * shared run like "Lich" stable instead of its letters cross-matching duplicates
+ * elsewhere in the string.
+ */
+function reconcile(
+  prev: Slot[],
+  value: string,
+  idRef: MutableRefObject<number>
+): Slot[] {
+  const nextChars = Array.from(value)
+  const pairs = lcsPairs(
+    prev.map((s) => s.char),
+    nextChars
+  )
+  const prevForNext = new Map<number, number>()
+  for (const { ai, bi } of pairs) prevForNext.set(bi, ai)
+
+  return nextChars.map((char, j) => {
+    const pi = prevForNext.get(j)
+    return pi !== undefined
+      ? { id: prev[pi].id, char }
+      : { id: idRef.current++, char }
   })
 }
 
@@ -139,14 +185,14 @@ function staggerDelay(
 export function CharacterFlow({
   value,
   className,
-  duration = 0.6,
+  duration = 0.7,
   ease = DEFAULT_EASE,
   enter,
   exit,
   layoutDuration = DEFAULT_LAYOUT_DURATION,
   layoutEase = DEFAULT_EASE,
   transition,
-  stagger = 0.05,
+  stagger = 0,
   staggerFrom = "first",
   trend = "up",
   rollDistance = DEFAULT_ROLL_DISTANCE,
@@ -155,26 +201,35 @@ export function CharacterFlow({
   respectMotionPreference = true,
 }: CharacterFlowProps) {
   const reduce = useReducedMotion()
-  const prevValueRef = useRef("")
-  const prev = prevValueRef.current
+  const idRef = useRef(0)
+  const prevSlotsRef = useRef<Slot[] | null>(null)
+  if (prevSlotsRef.current === null) {
+    prevSlotsRef.current = Array.from(value).map((char) => ({
+      id: idRef.current++,
+      char,
+    }))
+  }
+  const prevSlots = prevSlotsRef.current
+  // Stable-id slots for the current value: matched characters reuse their id
+  // (via LCS), so a shared run stays one set of elements that just slide.
+  const slots = reconcile(prevSlots, value, idRef)
 
   useEffect(() => {
-    prevValueRef.current = value
+    prevSlotsRef.current = slots
   })
 
   if (!animated || (respectMotionPreference && reduce)) {
     return <span className={className}>{value}</span>
   }
 
-  const chars = toKeyedChars(value)
-  const prevKeys = new Set(toKeyedChars(prev).map((c) => c.key))
-  const prevChars = Array.from(prev)
+  const prevChars = prevSlots.map((s) => s.char)
+  const prevIds = new Set(prevSlots.map((s) => s.id))
 
   // Only characters that weren't here last render cascade; rank them among
   // themselves so appending one letter never inherits a large index delay.
-  const enteringRank = new Map<string, number>()
-  chars.forEach((c) => {
-    if (!prevKeys.has(c.key)) enteringRank.set(c.key, enteringRank.size)
+  const enteringRank = new Map<number, number>()
+  slots.forEach((s) => {
+    if (!prevIds.has(s.id)) enteringRank.set(s.id, enteringRank.size)
   })
   const enteringCount = enteringRank.size
 
@@ -196,8 +251,8 @@ export function CharacterFlow({
   return (
     <span className={cn("relative inline-flex", className)} aria-label={value}>
       <AnimatePresence mode="popLayout" initial={false}>
-        {chars.map(({ key, char }, i) => {
-          const rank = enteringRank.get(key)
+        {slots.map(({ id, char }, i) => {
+          const rank = enteringRank.get(id)
           const isEntering = rank !== undefined
           // Bigger character change → longer travel → faster apparent roll.
           const travel =
@@ -210,7 +265,7 @@ export function CharacterFlow({
 
           return (
             <motion.span
-              key={key}
+              key={id}
               layout="position"
               aria-hidden
               className="inline-block whitespace-pre"
