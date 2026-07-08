@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@emotion/is-prop-valid": "^1.4.0",
     "@fontsource-variable/oxanium": "^5.2.8",
     "@fontsource-variable/raleway": "^5.2.8",
     "@tailwindcss/vite": "^4",
@@ -27,6 +28,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.17.0",
+    "motion": "^12.42.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "shadcn": "^4.11.0",
