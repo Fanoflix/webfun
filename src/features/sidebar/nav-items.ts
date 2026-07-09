@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Grip, MonitorPlay, Spline, Table2 } from "lucide-react"
+import { Grip, MonitorPlay, Spline, Table2, Type } from "lucide-react"
 
 /**
  * A single sidebar entry. `keywords` are hidden search aliases — terms a person
@@ -73,6 +73,28 @@ export const navGroups: NavGroup[] = [
           "mosaic",
           "downscale",
           "retro",
+        ],
+      },
+    ],
+  },
+  {
+    label: "Motion",
+    items: [
+      {
+        title: "Character Flow",
+        to: "/character-flow",
+        icon: Type,
+        keywords: [
+          "numberflow",
+          "number flow",
+          "odometer",
+          "split flap",
+          "flip",
+          "morph",
+          "text transition",
+          "animated text",
+          "roll",
+          "ticker",
         ],
       },
     ],
