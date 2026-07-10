@@ -51,15 +51,15 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="gap-2">
         {groups.map((group) => (
           <Collapsible
             key={group.label}
             open={isOpen(group.label)}
             onOpenChange={(open) => toggle(group.label, open)}
           >
-            <SidebarGroup className="py-0.5">
-              <CollapsibleTrigger className="group/trigger flex h-8 w-full items-center px-2 text-xs font-semibold tracking-wider text-sidebar-foreground/70 uppercase transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <SidebarGroup className="rounded-lg bg-sidebar-foreground/[0.04] p-1">
+              <CollapsibleTrigger className="group/trigger flex h-8 w-full items-center rounded-md px-2 text-xs font-semibold tracking-wider text-sidebar-foreground/35 uppercase transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 {group.label}
                 <Plus className="ml-auto size-4 transition-transform duration-200 group-data-[panel-open]/trigger:rotate-45" />
               </CollapsibleTrigger>

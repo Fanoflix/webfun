@@ -103,7 +103,7 @@ export const navGroups: NavGroup[] = [
     label: "Speculative UI",
     items: [
       {
-        title: "Future Table",
+        title: "Concept table 1",
         to: "/future-table",
         icon: Table2,
         keywords: [
