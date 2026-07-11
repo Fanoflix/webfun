@@ -1,14 +1,20 @@
 import { memo } from "react"
 
+import { cn } from "@/lib/utils"
+import { CharacterFlow } from "@/features/motion/character-flow/CharacterFlow"
 import type { RenderCell } from "../engine/types"
 
 /**
- * One cell. Renders the filled content, or the column's styled empty placeholder
- * while the slot has no data. `data-phase` exposes the transition phase for CSS /
- * a Framer layer to hook into during the aesthetics pass — the value flip is not
- * animated yet.
+ * One cell. When the display resolves to a plain string — the column's empty
+ * placeholder while the slot is unfilled, or `String(value)` once data lands —
+ * it flows through `CharacterFlow`, so filling / clearing / updating a slot
+ * animates as a split-flap roll: shared characters slide, the rest scroll in and
+ * out. Custom (non-string) cell renderers fall back to rendering as-is.
+ * `data-phase` still exposes the engine's transition phase for CSS hooks.
  */
 function FutureTableCellImpl({ cell }: { cell: RenderCell }) {
+  const content = cell.isEmpty ? cell.emptyState.fillString : cell.render()
+
   return (
     <td
       data-phase={cell.phase}
@@ -16,12 +22,21 @@ function FutureTableCellImpl({ cell }: { cell: RenderCell }) {
       style={cell.size ? { width: cell.size } : undefined}
       className="px-3 py-2 text-sm"
     >
-      {cell.isEmpty ? (
-        <span className={cell.getEmptyClassName()}>
-          {cell.emptyState.fillString}
-        </span>
+      {typeof content === "string" ? (
+        <CharacterFlow
+          value={content}
+          className={cn(
+            "tabular-nums",
+            cell.isEmpty && cell.getEmptyClassName()
+          )}
+          duration={0.3}
+          stagger={0}
+          exit={{ duration: 0 }}
+          rollDistance={0.2}
+          trend="down"
+        />
       ) : (
-        cell.render()
+        content
       )}
     </td>
   )
