@@ -58,7 +58,7 @@ export function AppSidebar() {
             open={isOpen(group.label)}
             onOpenChange={(open) => toggle(group.label, open)}
           >
-            <SidebarGroup className="rounded-lg bg-sidebar-foreground/[0.04] p-1">
+            <SidebarGroup className="mx-2 w-auto rounded-lg bg-sidebar-foreground/[0.04] p-1">
               <CollapsibleTrigger className="group/trigger flex h-8 w-full items-center rounded-md px-2 text-xs font-semibold tracking-wider text-sidebar-foreground/35 uppercase transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 {group.label}
                 <Plus className="ml-auto size-4 transition-transform duration-200 group-data-[panel-open]/trigger:rotate-45" />
