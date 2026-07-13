@@ -3,6 +3,11 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/raleway";
 @import "@fontsource-variable/oxanium";
+/* StyleFlow tracks: Recursive carries wght + slnt (smooth), Fraunces is the
+   serif family (upright + italic faces) for the sans↔serif crossfade. */
+@import "@fontsource-variable/recursive/full.css";
+@import "@fontsource-variable/fraunces/full.css";
+@import "@fontsource-variable/fraunces/full-italic.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -39,6 +44,9 @@
     --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
     --sidebar-border: oklch(0.925 0.005 214.3);
     --sidebar-ring: oklch(0.723 0.014 214.4);
+    /* StyleFlow font tracks. */
+    --font-sf-sans: 'Recursive Variable', sans-serif;
+    --font-sf-serif: 'Fraunces Variable', serif;
 }
 
 .dark {

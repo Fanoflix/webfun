@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Grip, MonitorPlay, Spline, Table2, Type } from "lucide-react"
+import { Grip, MonitorPlay, Spline, Sparkles, Table2, Type } from "lucide-react"
 
 /**
  * A single sidebar entry. `keywords` are hidden search aliases — terms a person
@@ -95,6 +95,25 @@ export const navGroups: NavGroup[] = [
           "animated text",
           "roll",
           "ticker",
+        ],
+      },
+      {
+        title: "Style Flow",
+        to: "/style-flow",
+        icon: Sparkles,
+        keywords: [
+          "variable font",
+          "font weight",
+          "italic",
+          "serif",
+          "typography",
+          "shimmer",
+          "font variation settings",
+          "wght",
+          "slnt",
+          "recursive",
+          "fraunces",
+          "animated type",
         ],
       },
     ],

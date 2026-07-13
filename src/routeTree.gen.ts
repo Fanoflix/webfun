@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StyleFlowRouteImport } from './routes/style-flow'
 import { Route as LowResVideoRouteImport } from './routes/low-res-video'
 import { Route as FutureTableRouteImport } from './routes/future-table'
 import { Route as DitheringRouteImport } from './routes/dithering'
@@ -16,6 +17,11 @@ import { Route as CharacterFlowRouteImport } from './routes/character-flow'
 import { Route as AntiAliasingRouteImport } from './routes/anti-aliasing'
 import { Route as IndexRouteImport } from './routes/index'
 
+const StyleFlowRoute = StyleFlowRouteImport.update({
+  id: '/style-flow',
+  path: '/style-flow',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LowResVideoRoute = LowResVideoRouteImport.update({
   id: '/low-res-video',
   path: '/low-res-video',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/dithering': typeof DitheringRoute
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
+  '/style-flow': typeof StyleFlowRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/dithering': typeof DitheringRoute
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
+  '/style-flow': typeof StyleFlowRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/dithering': typeof DitheringRoute
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
+  '/style-flow': typeof StyleFlowRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/dithering'
     | '/future-table'
     | '/low-res-video'
+    | '/style-flow'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/dithering'
     | '/future-table'
     | '/low-res-video'
+    | '/style-flow'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/dithering'
     | '/future-table'
     | '/low-res-video'
+    | '/style-flow'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,10 +118,18 @@ export interface RootRouteChildren {
   DitheringRoute: typeof DitheringRoute
   FutureTableRoute: typeof FutureTableRoute
   LowResVideoRoute: typeof LowResVideoRoute
+  StyleFlowRoute: typeof StyleFlowRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/style-flow': {
+      id: '/style-flow'
+      path: '/style-flow'
+      fullPath: '/style-flow'
+      preLoaderRoute: typeof StyleFlowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/low-res-video': {
       id: '/low-res-video'
       path: '/low-res-video'
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   DitheringRoute: DitheringRoute,
   FutureTableRoute: FutureTableRoute,
   LowResVideoRoute: LowResVideoRoute,
+  StyleFlowRoute: StyleFlowRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

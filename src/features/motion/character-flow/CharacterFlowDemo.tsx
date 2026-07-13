@@ -4,7 +4,15 @@ import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { EASES } from "../eases"
 import { CharacterFlow } from "./CharacterFlow"
 import { MODES, useCharacterFlowDemo } from "./useCharacterFlowDemo"
 import { WordWheel } from "./WordWheel"
@@ -27,6 +35,9 @@ export function CharacterFlowDemo() {
     selectWord,
     addWord,
     removeWord,
+    easeKey,
+    setEaseKey,
+    ease,
   } = useCharacterFlowDemo()
 
   const [draft, setDraft] = useState("")
@@ -79,10 +90,12 @@ export function CharacterFlowDemo() {
                   ? "text-xl font-normal"
                   : "text-5xl font-semibold"
               )}
-              exit={{ duration: 0.2 }}
-              stagger={0.01}
-              duration={0.75}
-              rollDistance={0.3}
+              exit={{ duration: 0.1 }}
+              stagger={0.2}
+              duration={0.5}
+              rollDistance={0.1}
+              ease={ease}
+              layoutEase={ease}
             />
           </div>
           <p className="text-center text-[10px] font-normal tracking-widest text-muted-foreground">
@@ -98,17 +111,38 @@ export function CharacterFlowDemo() {
             placeholder="Type to animate…"
             aria-label="Text to animate"
           />
-          <div className="flex flex-wrap gap-2">
-            {MODES.map(({ key, label }) => (
-              <Button
-                key={key}
-                variant={mode === key ? "default" : "outline"}
-                aria-pressed={mode === key}
-                onClick={() => selectMode(key)}
-              >
-                {label}
-              </Button>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              {MODES.map(({ key, label }) => (
+                <Button
+                  key={key}
+                  variant={mode === key ? "default" : "outline"}
+                  aria-pressed={mode === key}
+                  onClick={() => selectMode(key)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                Easing
+              </span>
+              <Select value={easeKey} onValueChange={(v) => setEaseKey(v as string)}>
+                <SelectTrigger size="sm" className="w-36" aria-label="Easing">
+                  <SelectValue>
+                    {(v) => EASES.find((e) => e.key === v)?.label ?? String(v)}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {EASES.map(({ key, label }) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>

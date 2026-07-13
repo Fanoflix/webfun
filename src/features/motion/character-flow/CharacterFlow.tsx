@@ -284,10 +284,10 @@ export function CharacterFlow({
                   ...enterT,
                   delay,
                   y: {
-                    duration: 0.25,
+                    duration: duration / 3,
                   },
                   opacity: {
-                    duration: 0.5,
+                    duration: Math.max(0.1, duration / 3),
                   },
                 }}
               >

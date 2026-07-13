@@ -1,5 +1,7 @@
 import { useState } from "react"
 
+import { DEFAULT_EASE_KEY, resolveEase } from "../eases"
+
 /** Words the wheel starts with; users can add or remove any of them. */
 export const BASE_WORDS = [
   "departures",
@@ -44,6 +46,7 @@ export function useCharacterFlowDemo() {
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [priceIndex, setPriceIndex] = useState(0)
   const [value, setValue] = useState<string>(BASE_WORDS[0])
+  const [easeKey, setEaseKey] = useState(DEFAULT_EASE_KEY)
 
   /** Advance to the next item in the active list (fired by clicking the preview). */
   const advance = () => {
@@ -105,5 +108,8 @@ export function useCharacterFlowDemo() {
     selectWord,
     addWord,
     removeWord,
+    easeKey,
+    setEaseKey,
+    ease: resolveEase(easeKey),
   }
 }
