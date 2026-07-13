@@ -280,7 +280,16 @@ export function CharacterFlow({
                   y: `${-dir * rollDistance}em`,
                   transition: exitT,
                 }}
-                transition={{ ...enterT, delay }}
+                transition={{
+                  ...enterT,
+                  delay,
+                  y: {
+                    duration: 0.25,
+                  },
+                  opacity: {
+                    duration: 0.5,
+                  },
+                }}
               >
                 {char}
               </motion.span>

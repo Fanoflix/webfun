@@ -79,10 +79,10 @@ export function CharacterFlowDemo() {
                   ? "text-xl font-normal"
                   : "text-5xl font-semibold"
               )}
-              exit={{ duration: 0.1 }}
+              exit={{ duration: 0.2 }}
               stagger={0.01}
-              duration={0.25}
-              rollDistance={0.15}
+              duration={0.75}
+              rollDistance={0.3}
             />
           </div>
           <p className="text-center text-[10px] font-normal tracking-widest text-muted-foreground">
