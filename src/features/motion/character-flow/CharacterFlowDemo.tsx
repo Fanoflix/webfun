@@ -90,10 +90,10 @@ export function CharacterFlowDemo() {
                   ? "text-xl font-normal"
                   : "text-5xl font-semibold"
               )}
-              exit={{ duration: 0.1 }}
-              stagger={0.2}
+              exit={{ duration: 0.2 }}
+              stagger={0.01}
               duration={0.5}
-              rollDistance={0.1}
+              rollDistance={0.3}
               ease={ease}
               layoutEase={ease}
             />
@@ -128,7 +128,10 @@ export function CharacterFlowDemo() {
               <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                 Easing
               </span>
-              <Select value={easeKey} onValueChange={(v) => setEaseKey(v as string)}>
+              <Select
+                value={easeKey}
+                onValueChange={(v) => setEaseKey(v as string)}
+              >
                 <SelectTrigger size="sm" className="w-36" aria-label="Easing">
                   <SelectValue>
                     {(v) => EASES.find((e) => e.key === v)?.label ?? String(v)}
