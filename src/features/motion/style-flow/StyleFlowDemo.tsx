@@ -97,10 +97,10 @@ export function StyleFlowDemo() {
               stepDuration={stepDuration}
               ease={ease}
               weights={[100, 200, 300, 400, 500, 600, 700, 800, 900]}
-              sizeRange={[28, 72]}
+              sizeRange={[32, 62]}
               stagger={0}
               restStyle={{ weight: 500, family: "sans", size: 50 }}
-              className="tracking-tighter"
+              className="tracking-[-0.45rem]"
             />
           </div>
           <p className="text-center text-[10px] font-normal tracking-widest text-muted-foreground">
@@ -182,7 +182,7 @@ export function StyleFlowDemo() {
             >
               <Select
                 value={easeKey}
-                onValueChange={(v) => setEaseKey(v as string)}
+                onValueChange={(v) => v !== null && setEaseKey(v)}
               >
                 <SelectTrigger size="sm" className="w-40" aria-label="Easing">
                   <SelectValue>

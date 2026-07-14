@@ -130,7 +130,7 @@ export function CharacterFlowDemo() {
               </span>
               <Select
                 value={easeKey}
-                onValueChange={(v) => setEaseKey(v as string)}
+                onValueChange={(v) => v !== null && setEaseKey(v)}
               >
                 <SelectTrigger size="sm" className="w-36" aria-label="Easing">
                   <SelectValue>

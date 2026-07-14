@@ -17,15 +17,25 @@ function easeOutElastic(t: number): number {
   return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1
 }
 
-/** An easing preset for the demos: a friendly label and a Motion `Easing`. */
-export type EasePreset = { key: string; label: string; value: Easing }
+/** The stable id of an easing preset — the union of every preset's `key`. */
+export type EaseKey =
+  | "smooth"
+  | "expoOut"
+  | "expoInOut"
+  | "springy"
+  | "anticipate"
+  | "elastic"
+  | "bounce"
+
+/** An easing preset for the demos: a stable key, a friendly label, an `Easing`. */
+export type EasePreset = { key: EaseKey; label: string; value: Easing }
 
 /**
  * Shared easing presets for the motion demos. Each `value` is a Motion `Easing`
  * — a cubic-bézier tuple, a built-in name, or a custom function. Overshoot
  * presets (Springy / Elastic / Bounce) pop past the target and settle back.
  */
-export const EASES: EasePreset[] = [
+export const EASES: readonly EasePreset[] = [
   { key: "smooth", label: "Smooth", value: [0.22, 1, 0.36, 1] },
   { key: "expoOut", label: "Expo Out", value: [0.16, 1, 0.3, 1] },
   { key: "expoInOut", label: "Expo In-Out", value: [0.87, 0, 0.13, 1] },
@@ -36,9 +46,9 @@ export const EASES: EasePreset[] = [
 ]
 
 /** The default preset key (a smooth ease-out). */
-export const DEFAULT_EASE_KEY = "smooth"
+export const DEFAULT_EASE_KEY: EaseKey = "smooth"
 
 /** Resolve a preset key to its `Easing`, falling back to the first preset. */
-export function resolveEase(key: string): Easing {
+export function resolveEase(key: EaseKey): Easing {
   return (EASES.find((e) => e.key === key) ?? EASES[0]).value
 }

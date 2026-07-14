@@ -1,17 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import type { EaseKey } from "../eases"
 import { DEFAULT_EASE_KEY, resolveEase } from "../eases"
 import type { TrackName, TrackPick } from "./useStyleFlow"
 import { ALL_TRACKS } from "./useStyleFlow"
-
-/** Default preview run length (s). */
-export const DEFAULT_DURATION = 6
-
-/** Default seconds between the start of a character's consecutive turns. */
-export const DEFAULT_STEP_INTERVAL = 0.1
-
-/** Default seconds a single track transition takes. */
-export const DEFAULT_STEP_DURATION = 0.1
 
 /** Sample strings to shuffle through. */
 export const SAMPLES = [
@@ -39,26 +31,59 @@ export const PICKS: { key: TrackPick; label: string }[] = [
   { key: "roundRobin", label: "Round-robin" },
 ]
 
+/** The initial value of every piece of demo state, fully typed. */
+export type StyleFlowDefaults = {
+  value: string
+  seed: number
+  cooldown: number
+  /** Total run length (s). */
+  duration: number
+  /** Seconds between the start of a character's consecutive turns. */
+  stepInterval: number
+  /** Seconds a single track transition takes. */
+  stepDuration: number
+  trackPick: TrackPick
+  easeKey: EaseKey
+  looping: boolean
+  active: Record<TrackName, boolean>
+}
+
+/** Every default in one place. */
+export const STYLE_FLOW_DEFAULTS: StyleFlowDefaults = {
+  value: SAMPLES[0],
+  seed: 1,
+  cooldown: 1,
+  duration: 6,
+  stepInterval: 0.13,
+  stepDuration: 0.04,
+  trackPick: "random",
+  easeKey: DEFAULT_EASE_KEY,
+  looping: true,
+  active: { weight: true, slant: true, family: true, size: true },
+}
 
 /** All demo state: the text, which tracks play, the cooldown, and the looping. */
 export function useStyleFlowDemo() {
-  const [value, setValue] = useState(SAMPLES[0])
+  const [value, setValue] = useState(STYLE_FLOW_DEFAULTS.value)
   const [, setSampleIndex] = useState(0)
-  const [seed, setSeed] = useState(1)
+  const [seed, setSeed] = useState(STYLE_FLOW_DEFAULTS.seed)
   const [playToken, setPlayToken] = useState(0)
-  const [cooldown, setCooldown] = useState(1)
-  const [duration, setDuration] = useState(DEFAULT_DURATION)
-  const [stepInterval, setStepInterval] = useState(DEFAULT_STEP_INTERVAL)
-  const [stepDuration, setStepDuration] = useState(DEFAULT_STEP_DURATION)
-  const [trackPick, setTrackPick] = useState<TrackPick>("random")
-  const [easeKey, setEaseKey] = useState(DEFAULT_EASE_KEY)
-  const [looping, setLooping] = useState(true)
-  const [active, setActive] = useState<Record<TrackName, boolean>>({
-    weight: true,
-    slant: true,
-    family: true,
-    size: true,
-  })
+  const [cooldown, setCooldown] = useState(STYLE_FLOW_DEFAULTS.cooldown)
+  const [duration, setDuration] = useState(STYLE_FLOW_DEFAULTS.duration)
+  const [stepInterval, setStepInterval] = useState(
+    STYLE_FLOW_DEFAULTS.stepInterval
+  )
+  const [stepDuration, setStepDuration] = useState(
+    STYLE_FLOW_DEFAULTS.stepDuration
+  )
+  const [trackPick, setTrackPick] = useState<TrackPick>(
+    STYLE_FLOW_DEFAULTS.trackPick
+  )
+  const [easeKey, setEaseKey] = useState<EaseKey>(STYLE_FLOW_DEFAULTS.easeKey)
+  const [looping, setLooping] = useState(STYLE_FLOW_DEFAULTS.looping)
+  const [active, setActive] = useState<Record<TrackName, boolean>>(
+    STYLE_FLOW_DEFAULTS.active
+  )
 
   const tracks = ALL_TRACKS.filter((t) => active[t])
   const ease = resolveEase(easeKey)
