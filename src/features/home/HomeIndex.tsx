@@ -13,9 +13,12 @@ export function HomeIndex() {
   return (
     <div className="w-full max-w-3xl space-y-8">
       <div className="space-y-1">
-        <h1 className="text-lg font-semibold tracking-tight">webfun</h1>
-        <p className="text-sm text-muted-foreground">
-          Small experiments in things that looked cool enough to rebuild.
+        <h1 className="text-xl font-light">
+          web stuff, no impact, just satisfying
+        </h1>
+        <p className="text-muted-foreground">
+          Small experiments in things that looked cool enough to rebuild. More
+          to come soon!
         </p>
       </div>
 

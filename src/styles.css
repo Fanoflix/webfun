@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
-@import "@fontsource-variable/raleway";
 /* StyleFlow tracks: Recursive carries wght + slnt (smooth), Fraunces is the
    serif family (upright + italic faces) for the sans↔serif crossfade. */
 @import "@fontsource-variable/recursive/full.css";
@@ -84,10 +83,8 @@
 }
 
 @theme inline {
-    /* The whole UI runs on Inter. */
+    /* The whole UI runs on Inter — headings included. */
     --font-sans: 'Inter Variable', sans-serif;
-    /* Reserved for the big page title only — the voice the site already had. */
-    --font-display: 'Raleway Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -140,11 +137,5 @@
     }
   html {
     @apply font-sans;
-    }
-  /* Inter everywhere; only the top-level page title gets the display face.
-     Smaller headings (section labels and the like) stay on Inter with the rest
-     of the UI. */
-  h1 {
-    @apply font-display;
     }
 }

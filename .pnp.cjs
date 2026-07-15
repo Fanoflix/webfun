@@ -32,7 +32,6 @@ const RAW_RUNTIME_STATE =
           ["@emotion/is-prop-valid", "npm:1.4.0"],\
           ["@fontsource-variable/fraunces", "npm:5.2.9"],\
           ["@fontsource-variable/inter", "npm:5.2.8"],\
-          ["@fontsource-variable/raleway", "npm:5.2.8"],\
           ["@fontsource-variable/recursive", "npm:5.2.8"],\
           ["@tailwindcss/vite", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:4.3.0"],\
           ["@tanstack/devtools-vite", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:0.7.0"],\
@@ -1116,15 +1115,6 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "../../../.yarn/berry/cache/@fontsource-variable-inter-npm-5.2.8-4ebcf30e88-10c0.zip/node_modules/@fontsource-variable/inter/",\
         "packageDependencies": [\
           ["@fontsource-variable/inter", "npm:5.2.8"]\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
-    ["@fontsource-variable/raleway", [\
-      ["npm:5.2.8", {\
-        "packageLocation": "../../../.yarn/berry/cache/@fontsource-variable-raleway-npm-5.2.8-82e33efb6a-10c0.zip/node_modules/@fontsource-variable/raleway/",\
-        "packageDependencies": [\
-          ["@fontsource-variable/raleway", "npm:5.2.8"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -8819,7 +8809,6 @@ const RAW_RUNTIME_STATE =
           ["@emotion/is-prop-valid", "npm:1.4.0"],\
           ["@fontsource-variable/fraunces", "npm:5.2.9"],\
           ["@fontsource-variable/inter", "npm:5.2.8"],\
-          ["@fontsource-variable/raleway", "npm:5.2.8"],\
           ["@fontsource-variable/recursive", "npm:5.2.8"],\
           ["@tailwindcss/vite", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:4.3.0"],\
           ["@tanstack/devtools-vite", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:0.7.0"],\

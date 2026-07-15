@@ -764,13 +764,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fontsource-variable/raleway@npm:^5.2.8":
-  version: 5.2.8
-  resolution: "@fontsource-variable/raleway@npm:5.2.8"
-  checksum: 10c0/81953ba9d0478da259bc4c831255289639fb7b9b98d37962d2e3c4fc9dffdedba2890827469a35d87bd71acd8f105a09f67978c6ff387277a64ee9cf254b16d6
-  languageName: node
-  linkType: hard
-
 "@fontsource-variable/recursive@npm:^5.2.8":
   version: 5.2.8
   resolution: "@fontsource-variable/recursive@npm:5.2.8"
@@ -6838,7 +6831,6 @@ __metadata:
     "@emotion/is-prop-valid": "npm:^1.4.0"
     "@fontsource-variable/fraunces": "npm:^5.2.9"
     "@fontsource-variable/inter": "npm:^5.2.8"
-    "@fontsource-variable/raleway": "npm:^5.2.8"
     "@fontsource-variable/recursive": "npm:^5.2.8"
     "@tailwindcss/vite": "npm:^4"
     "@tanstack/devtools-vite": "npm:latest"
