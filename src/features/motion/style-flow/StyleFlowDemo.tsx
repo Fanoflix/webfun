@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { ToolIntro } from "@/components/layout/ToolIntro"
 import { EASES } from "../eases"
 import { StyleFlow } from "./StyleFlow"
 import { ALL_TRACKS } from "./useStyleFlow"
@@ -64,13 +65,12 @@ export function StyleFlowDemo() {
   return (
     <TooltipProvider delay={200}>
       <div className="flex w-full max-w-2xl flex-col gap-8">
-        <div className="space-y-1">
-          <h1 className="text-lg font-semibold tracking-tight">StyleFlow</h1>
-          <p className="text-sm text-muted-foreground">
-            A per-character typographic shimmer — each letter drifts across
-            weight, italic, serif and size, one track at a time, then settles.
-          </p>
-        </div>
+        <ToolIntro title="StyleFlow">
+          You'd normally keyframe this by hand in After Effects. Variable fonts
+          let the browser just… do it — every letter picking its own weight,
+          slant, serif and size, live. The one rule that keeps it from looking
+          twitchy: never change the same thing twice in a row.
+        </ToolIntro>
 
         <div className="space-y-2">
           <div

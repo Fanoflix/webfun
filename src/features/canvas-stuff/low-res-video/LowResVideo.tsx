@@ -1,3 +1,4 @@
+import { ToolIntro } from "@/components/layout/ToolIntro"
 import { Controls } from "./Controls"
 import { PixelScreen } from "./PixelScreen"
 import { useLowResVideo } from "./useLowResVideo"
@@ -26,6 +27,12 @@ export function LowResVideo() {
 
   return (
     <div className="flex w-full flex-col items-center gap-8">
+      <ToolIntro title="Low Res Video" className="w-full max-w-3xl">
+        Throw away almost every pixel and you can still tell what you're looking
+        at — your brain fills the rest back in. Same trick as a stadium
+        scoreboard: up close it's a grid of dots, from far away it's a face.
+      </ToolIntro>
+
       <div
         className="relative grid place-items-center overflow-auto rounded-none bg-black p-4"
         onDragOver={(e) => e.preventDefault()}

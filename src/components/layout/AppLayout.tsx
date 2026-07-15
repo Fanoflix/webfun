@@ -7,6 +7,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { ToolGate } from "@/features/flags/ToolGate"
 import { AppSidebar } from "@/features/sidebar/AppSidebar"
 
 /**
@@ -35,7 +36,9 @@ export function AppLayout() {
           <InsetSidebarTrigger />
         </header>
         <main className="flex flex-1 items-center justify-center p-6">
-          <Outlet />
+          <ToolGate>
+            <Outlet />
+          </ToolGate>
         </main>
       </SidebarInset>
     </SidebarProvider>

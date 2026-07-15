@@ -31,7 +31,7 @@ const RAW_RUNTIME_STATE =
           ["@base-ui/react", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.5.0"],\
           ["@emotion/is-prop-valid", "npm:1.4.0"],\
           ["@fontsource-variable/fraunces", "npm:5.2.9"],\
-          ["@fontsource-variable/oxanium", "npm:5.2.8"],\
+          ["@fontsource-variable/inter", "npm:5.2.8"],\
           ["@fontsource-variable/raleway", "npm:5.2.8"],\
           ["@fontsource-variable/recursive", "npm:5.2.8"],\
           ["@tailwindcss/vite", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:4.3.0"],\
@@ -1111,11 +1111,11 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
-    ["@fontsource-variable/oxanium", [\
+    ["@fontsource-variable/inter", [\
       ["npm:5.2.8", {\
-        "packageLocation": "../../../.yarn/berry/cache/@fontsource-variable-oxanium-npm-5.2.8-5a96763caa-10c0.zip/node_modules/@fontsource-variable/oxanium/",\
+        "packageLocation": "../../../.yarn/berry/cache/@fontsource-variable-inter-npm-5.2.8-4ebcf30e88-10c0.zip/node_modules/@fontsource-variable/inter/",\
         "packageDependencies": [\
-          ["@fontsource-variable/oxanium", "npm:5.2.8"]\
+          ["@fontsource-variable/inter", "npm:5.2.8"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -8818,7 +8818,7 @@ const RAW_RUNTIME_STATE =
           ["@base-ui/react", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:1.5.0"],\
           ["@emotion/is-prop-valid", "npm:1.4.0"],\
           ["@fontsource-variable/fraunces", "npm:5.2.9"],\
-          ["@fontsource-variable/oxanium", "npm:5.2.8"],\
+          ["@fontsource-variable/inter", "npm:5.2.8"],\
           ["@fontsource-variable/raleway", "npm:5.2.8"],\
           ["@fontsource-variable/recursive", "npm:5.2.8"],\
           ["@tailwindcss/vite", "virtual:0bf834070b19c5cc5ec754c222a63f1fdee99fc02f840997617b9e021204ea7d1c8a43f36430ee1ead2dc128ddae8fd9abe58fb064d6cbc9919daa19f3f2da60#npm:4.3.0"],\

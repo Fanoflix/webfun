@@ -1,3 +1,4 @@
+import { ToolIntro } from "@/components/layout/ToolIntro"
 import { FloatingPanels } from "@/components/floating-panels/FloatingPanels"
 import { ZoomBox } from "@/components/loupe/ZoomBox"
 import { ZoomSelection } from "@/components/loupe/ZoomSelection"
@@ -27,7 +28,14 @@ export function AntiAlias() {
   } = useAntiAlias()
 
   return (
-    <div className="flex w-full justify-center">
+    <div className="flex w-full flex-col items-center gap-8">
+      <ToolIntro title="Anti-aliasing" className="w-full max-w-3xl">
+        Every game you've played fights this: screens are made of squares, and
+        nothing in a game is. The fix is almost too dumb — look at each pixel a
+        few extra times and average what you saw. Drag Samples up and watch the
+        staircase melt.
+      </ToolIntro>
+
       <div className="relative grid place-items-center bg-black p-4">
         <AACanvas
           ref={canvasRef}

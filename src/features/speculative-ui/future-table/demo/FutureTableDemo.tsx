@@ -1,3 +1,4 @@
+import { ToolIntro } from "@/components/layout/ToolIntro"
 import { Button } from "@/components/ui/button"
 import { FutureTable } from "../components/FutureTable"
 import { useFutureTableDemo } from "./useFutureTableDemo"
@@ -22,6 +23,12 @@ export function FutureTableDemo() {
 
   return (
     <div className="w-full max-w-3xl space-y-4">
+      <ToolIntro title="Concept table 1">
+        Most tables throw their rows away and build new ones every time the data
+        changes. This one never moves a row — the slots stay put and the contents
+        flip over in place, like a train station departure board.
+      </ToolIntro>
+
       <div className="flex flex-wrap gap-2">
         <Button onClick={load}>Load data</Button>
         <Button variant="outline" onClick={addRow}>

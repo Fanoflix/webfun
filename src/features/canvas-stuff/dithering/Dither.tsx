@@ -1,3 +1,4 @@
+import { ToolIntro } from "@/components/layout/ToolIntro"
 import { FloatingPanels } from "@/components/floating-panels/FloatingPanels"
 import { ZoomBox } from "@/components/loupe/ZoomBox"
 import { ZoomSelection } from "@/components/loupe/ZoomSelection"
@@ -29,7 +30,13 @@ export function Dither() {
   } = useDither()
 
   return (
-    <div className="flex w-full justify-center">
+    <div className="flex w-full flex-col items-center gap-8">
+      <ToolIntro title="Dithering" className="w-full max-w-3xl">
+        Old consoles had almost no colours, so they cheated: scatter dots of the
+        colours you do have, and let someone's eyes blend the ones you don't.
+        Hold the image to see what it really looks like underneath.
+      </ToolIntro>
+
       <div
         className="relative grid place-items-center bg-black p-4"
         onDragOver={(e) => e.preventDefault()}

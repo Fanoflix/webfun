@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { IntroLink, ToolIntro } from "@/components/layout/ToolIntro"
 import { cn } from "@/lib/utils"
 import { EASES } from "../eases"
 import { CharacterFlow } from "./CharacterFlow"
@@ -58,15 +59,12 @@ export function CharacterFlowDemo() {
   return (
     <div className="flex w-full max-w-5xl flex-col gap-8 lg:flex-row lg:items-start lg:gap-0">
       <div className="min-w-0 flex-1 space-y-8">
-        <div className="space-y-1">
-          <h1 className="text-lg font-semibold tracking-tight">
-            CharacterFlow
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            NumberFlow-style transitions for any string — shared characters
-            slide, the rest roll in and out.
-          </p>
-        </div>
+        <ToolIntro title="CharacterFlow">
+          <IntroLink href="https://number-flow.barvian.me/">NumberFlow</IntroLink>{" "}
+          made numbers roll over like an odometer, and it's lovely. This does it
+          for any word — letters that survive the change slide across to their new
+          seat, everything else rolls away.
+        </ToolIntro>
 
         <div className="space-y-2">
           <div

@@ -1,0 +1,64 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Lets you re-deploy from the Actions tab after changing VITE_RELEASED,
+  # which is how each staged launch goes out.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; always ship the newest commit.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Yarn 4 (version pinned by "packageManager" in package.json).
+      - run: corepack enable
+
+      - run: yarn install --immutable
+
+      - run: yarn typecheck
+
+      - run: yarn build
+        env:
+          # Which tools are public. Set this as a *repository variable*
+          # (Settings → Secrets and variables → Actions → Variables), e.g.
+          # "dithering,anti-aliasing". Unset = nothing is listed.
+          VITE_RELEASED: ${{ vars.VITE_RELEASED }}
+          # The friends-link key: /?key=<secret>. A repo *variable*, not a
+          # secret, on purpose — it is compiled into the public JS bundle, so
+          # storing it as a secret would only be theatre.
+          VITE_UNLOCK_SECRET: ${{ vars.VITE_UNLOCK_SECRET }}
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          # SPA build output; the server bundle in dist/server is only used at
+          # build time to prerender the shell and is never deployed.
+          path: dist/client
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

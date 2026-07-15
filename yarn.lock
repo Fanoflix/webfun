@@ -757,10 +757,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fontsource-variable/oxanium@npm:^5.2.8":
+"@fontsource-variable/inter@npm:^5.2.8":
   version: 5.2.8
-  resolution: "@fontsource-variable/oxanium@npm:5.2.8"
-  checksum: 10c0/9ac16a8a0f74a662bd4313241b3f9eef09c05c32baf90de1edb5143c0677f4ca73bb2d173a525258fc5669f96b2b6125e88eedd06adf649e480023a53f906185
+  resolution: "@fontsource-variable/inter@npm:5.2.8"
+  checksum: 10c0/35b46df31c8c18f55f87228acf6297e4dac6cc9f38d0faaafdaf5a40e40c386cf1bfb115fb0fe0dcdb9b7e14f582843693ccf070d9c903072a5b2fc0f8dfde56
   languageName: node
   linkType: hard
 
@@ -6837,7 +6837,7 @@ __metadata:
     "@base-ui/react": "npm:^1.5.0"
     "@emotion/is-prop-valid": "npm:^1.4.0"
     "@fontsource-variable/fraunces": "npm:^5.2.9"
-    "@fontsource-variable/oxanium": "npm:^5.2.8"
+    "@fontsource-variable/inter": "npm:^5.2.8"
     "@fontsource-variable/raleway": "npm:^5.2.8"
     "@fontsource-variable/recursive": "npm:^5.2.8"
     "@tailwindcss/vite": "npm:^4"
