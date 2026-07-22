@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 
-import { isToolKey, parseReleased, toolFromPathname } from "./flags"
+import {
+  ALL_TOOLS,
+  NEVER_RELEASED,
+  applyReleaseGuard,
+  isToolKey,
+  parseReleased,
+  toolFromPathname,
+} from "./flags"
 
 describe("parseReleased", () => {
   it("reads a comma-separated slug list", () => {
@@ -26,6 +33,43 @@ describe("parseReleased", () => {
   it("treats unset/empty as nothing released (fails closed)", () => {
     expect(parseReleased(undefined)).toEqual([])
     expect(parseReleased("")).toEqual([])
+  })
+})
+
+describe("NEVER_RELEASED", () => {
+  it("only ever names real tools", () => {
+    for (const tool of NEVER_RELEASED) {
+      expect(ALL_TOOLS).toContain(tool)
+    }
+  })
+
+  it("still parses out of an env var — the filter is applied later, not here", () => {
+    // parseReleased is pure slug validation. Whether a tool is *allowed* to be
+    // released is a separate decision, applied when building RELEASED, so that
+    // this stays a straightforward parser.
+    expect(parseReleased("concept-chat")).toEqual(["concept-chat"])
+  })
+
+  it("is stripped from a production release list even if the env names it", () => {
+    // The behaviour that actually matters: no env var can put an unlock-only
+    // tool on the public site.
+    expect(
+      applyReleaseGuard(["dithering", "concept-chat"], false)
+    ).toEqual(["dithering"])
+  })
+
+  it("survives in dev, so it can be worked on locally", () => {
+    expect(applyReleaseGuard(["dithering", "concept-chat"], true)).toEqual([
+      "dithering",
+      "concept-chat",
+    ])
+  })
+
+  it("leaves an ordinary release list untouched", () => {
+    expect(applyReleaseGuard(["dithering", "style-flow"], false)).toEqual([
+      "dithering",
+      "style-flow",
+    ])
   })
 })
 

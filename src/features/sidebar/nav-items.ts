@@ -1,5 +1,13 @@
 import type { LucideIcon } from "lucide-react"
-import { Grip, MonitorPlay, Spline, Sparkles, Table2, Type } from "lucide-react"
+import {
+  Grip,
+  MessagesSquare,
+  MonitorPlay,
+  Spline,
+  Sparkles,
+  Table2,
+  Type,
+} from "lucide-react"
 
 import type { ToolKey } from "@/features/flags/flags"
 
@@ -162,6 +170,25 @@ export const navGroups: NavGroup[] = [
           "slots",
           "pagination",
           "placeholder",
+          "future ui",
+        ],
+      },
+      {
+        title: "Concept chat",
+        to: "/concept-chat",
+        tool: "concept-chat",
+        blurb:
+          "A message that knows how it's meant to be read — press play and it performs itself.",
+        icon: MessagesSquare,
+        keywords: [
+          "chat",
+          "messaging",
+          "slack",
+          "discord",
+          "whatsapp",
+          "timeline",
+          "timed message",
+          "playback",
           "future ui",
         ],
       },

@@ -13,6 +13,7 @@ import { Route as StyleFlowRouteImport } from './routes/style-flow'
 import { Route as LowResVideoRouteImport } from './routes/low-res-video'
 import { Route as FutureTableRouteImport } from './routes/future-table'
 import { Route as DitheringRouteImport } from './routes/dithering'
+import { Route as ConceptChatRouteImport } from './routes/concept-chat'
 import { Route as CharacterFlowRouteImport } from './routes/character-flow'
 import { Route as AntiAliasingRouteImport } from './routes/anti-aliasing'
 import { Route as IndexRouteImport } from './routes/index'
@@ -37,6 +38,11 @@ const DitheringRoute = DitheringRouteImport.update({
   path: '/dithering',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConceptChatRoute = ConceptChatRouteImport.update({
+  id: '/concept-chat',
+  path: '/concept-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CharacterFlowRoute = CharacterFlowRouteImport.update({
   id: '/character-flow',
   path: '/character-flow',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/anti-aliasing': typeof AntiAliasingRoute
   '/character-flow': typeof CharacterFlowRoute
+  '/concept-chat': typeof ConceptChatRoute
   '/dithering': typeof DitheringRoute
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/anti-aliasing': typeof AntiAliasingRoute
   '/character-flow': typeof CharacterFlowRoute
+  '/concept-chat': typeof ConceptChatRoute
   '/dithering': typeof DitheringRoute
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/anti-aliasing': typeof AntiAliasingRoute
   '/character-flow': typeof CharacterFlowRoute
+  '/concept-chat': typeof ConceptChatRoute
   '/dithering': typeof DitheringRoute
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/anti-aliasing'
     | '/character-flow'
+    | '/concept-chat'
     | '/dithering'
     | '/future-table'
     | '/low-res-video'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/anti-aliasing'
     | '/character-flow'
+    | '/concept-chat'
     | '/dithering'
     | '/future-table'
     | '/low-res-video'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/anti-aliasing'
     | '/character-flow'
+    | '/concept-chat'
     | '/dithering'
     | '/future-table'
     | '/low-res-video'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AntiAliasingRoute: typeof AntiAliasingRoute
   CharacterFlowRoute: typeof CharacterFlowRoute
+  ConceptChatRoute: typeof ConceptChatRoute
   DitheringRoute: typeof DitheringRoute
   FutureTableRoute: typeof FutureTableRoute
   LowResVideoRoute: typeof LowResVideoRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DitheringRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/concept-chat': {
+      id: '/concept-chat'
+      path: '/concept-chat'
+      fullPath: '/concept-chat'
+      preLoaderRoute: typeof ConceptChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/character-flow': {
       id: '/character-flow'
       path: '/character-flow'
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AntiAliasingRoute: AntiAliasingRoute,
   CharacterFlowRoute: CharacterFlowRoute,
+  ConceptChatRoute: ConceptChatRoute,
   DitheringRoute: DitheringRoute,
   FutureTableRoute: FutureTableRoute,
   LowResVideoRoute: LowResVideoRoute,

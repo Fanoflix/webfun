@@ -20,6 +20,7 @@ export type ToolKey =
   | "character-flow"
   | "style-flow"
   | "future-table"
+  | "concept-chat"
 
 export const ALL_TOOLS: readonly ToolKey[] = [
   "dithering",
@@ -28,7 +29,18 @@ export const ALL_TOOLS: readonly ToolKey[] = [
   "character-flow",
   "style-flow",
   "future-table",
+  "concept-chat",
 ]
+
+/**
+ * Tools that never go public, no matter what `VITE_RELEASED` says.
+ *
+ * Concept chat is unlock-only by design — it's a running experiment rather than
+ * something with a launch post. Enforcing that here means it can't be released by
+ * a stray slug in an env var; the only way in is the unlock link. Dev is exempt,
+ * or it couldn't be worked on locally.
+ */
+export const NEVER_RELEASED: readonly ToolKey[] = ["concept-chat"]
 
 /** Narrow an arbitrary string to a `ToolKey`. */
 export function isToolKey(value: string): value is ToolKey {
@@ -57,11 +69,31 @@ export function parseReleased(raw: string | undefined): readonly ToolKey[] {
  * production build with the var unset we fail *closed* — nothing is listed —
  * so a forgotten env var can never leak the whole drip at once.
  */
-export const RELEASED: readonly ToolKey[] = import.meta.env.VITE_RELEASED
+const CONFIGURED_RELEASE: readonly ToolKey[] = import.meta.env.VITE_RELEASED
   ? parseReleased(import.meta.env.VITE_RELEASED)
   : import.meta.env.DEV
     ? ALL_TOOLS
     : []
+
+/**
+ * Drop anything in `NEVER_RELEASED` from a configured release list. Dev is exempt,
+ * or an unlock-only tool couldn't be worked on locally.
+ *
+ * Split out as a pure function so the rule is testable without depending on which
+ * env vars happen to be set while the suite runs.
+ */
+export function applyReleaseGuard(
+  tools: readonly ToolKey[],
+  isDev: boolean
+): readonly ToolKey[] {
+  if (isDev) return tools
+  return tools.filter((tool) => !NEVER_RELEASED.includes(tool))
+}
+
+export const RELEASED: readonly ToolKey[] = applyReleaseGuard(
+  CONFIGURED_RELEASE,
+  import.meta.env.DEV
+)
 
 /** Query param that unlocks everything: `/?key=<secret>`. */
 export const UNLOCK_PARAM = "key"
