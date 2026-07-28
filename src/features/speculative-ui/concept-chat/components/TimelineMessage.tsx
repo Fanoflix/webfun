@@ -145,30 +145,45 @@ function Rail({
   stopsAtReplay: boolean
 }) {
   return (
-    <div
-      data-slot="rail"
-      data-running={running || undefined}
-      className={`absolute top-0 -left-3 w-px overflow-hidden bg-border ${
-        stopsAtReplay ? "bottom-2" : "bottom-0"
-      }`}
-    >
-      {running && (
-        <motion.div
-          className="h-1/3 w-full bg-foreground/70"
-          animate={{ y: ["0%", "200%"] }}
-          /**
-           * The one animation here that isn't expo out. A ping-pong wants to
-           * ease at both ends; expo out would slam into every turn.
-           */
-          transition={{
-            duration: 0.9,
-            ease: "easeInOut",
-            repeat: Infinity,
-            repeatType: "reverse",
-          }}
-        />
-      )}
-    </div>
+    <>
+      {/* The glyph sits outside the line rather than inside it: the line clips
+          its own contents so the travelling segment can't escape, and anything
+          hung off it would be clipped too.
+
+          Offset up and to the left so it reads as a label *on* the rail rather
+          than a notch *in* it, and drawn in the rail's own colour — it marks the
+          message, it isn't a second control competing with the real play
+          button below. */}
+      <Play
+        aria-hidden
+        className="absolute top-4 -left-9.5 size-2.5 fill-current text-border"
+      />
+
+      <div
+        data-slot="rail"
+        data-running={running || undefined}
+        className={`absolute top-2 -left-7.5 w-px overflow-hidden bg-border ${
+          stopsAtReplay ? "bottom-1" : "bottom-0"
+        }`}
+      >
+        {running && (
+          <motion.div
+            className="h-1/3 w-full bg-foreground/70"
+            animate={{ y: ["0%", "200%"] }}
+            /**
+             * The one animation here that isn't expo out. A ping-pong wants to
+             * ease at both ends; expo out would slam into every turn.
+             */
+            transition={{
+              duration: 0.9,
+              ease: "easeInOut",
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+          />
+        )}
+      </div>
+    </>
   )
 }
 
@@ -292,7 +307,7 @@ function ReplayButton({ onReplay }: { onReplay: () => void }) {
       <motion.span
         aria-hidden
         data-slot="replay-connector"
-        className="absolute top-1/2 -left-3 h-px bg-border"
+        className="absolute top-1/2 -left-7.5 h-px bg-border"
         initial={{ width: 0 }}
         animate={{ width: "0.75rem" }}
         transition={
