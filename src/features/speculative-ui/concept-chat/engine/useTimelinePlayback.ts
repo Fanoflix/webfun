@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { Beat } from "./beats"
-import { REPLAY_GAP_MS } from "./defaults"
+import { PLAY_TAIL_MS, REPLAY_GAP_MS } from "./defaults"
 
 /**
  * Plays a timeline message: beats land one after another and stay.
@@ -91,9 +91,22 @@ export function useTimelinePlayback(
       setPhase("playing")
       handlers.current.onBeatLand?.()
 
+      /**
+       * The run doesn't end on the frame the last beat lands — the loader holds
+       * for `PLAY_TAIL_MS` first, so the message finishes rather than stopping
+       * dead on its own punchline.
+       */
+      const finishAfterTail = () => {
+        timers.current.push(
+          setTimeout(() => {
+            setPhase("done")
+            handlers.current.onFinish?.()
+          }, PLAY_TAIL_MS)
+        )
+      }
+
       if (beats.length <= 1) {
-        setPhase("done")
-        handlers.current.onFinish?.()
+        finishAfterTail()
         return
       }
 
@@ -111,10 +124,7 @@ export function useTimelinePlayback(
           setTimeout(() => {
             setVisibleCount(index + 2)
             handlers.current.onBeatLand?.()
-            if (isLast) {
-              setPhase("done")
-              handlers.current.onFinish?.()
-            }
+            if (isLast) finishAfterTail()
           }, offset)
         )
       })

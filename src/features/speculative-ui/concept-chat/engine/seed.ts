@@ -20,16 +20,20 @@ const beat = (text: string, hold: number): Segment => ({
  */
 
 /**
- * The opening conversation: **one message, three beats.**
+ * The opening conversation: **one message, ten beats.**
  *
- * It used to be five messages of someone rattling on, which is the shape a chat
- * app forces on a single thought. Collapsing it into one timeline message is the
- * argument being made in the form it's being made about — the visitor's first
- * impression is a thought that arrived whole and unfolds at the pace it was
- * meant to be read at, rather than a wall of text explaining that it could.
+ * It's a single timeline message rather than a run of ordinary ones, which is
+ * the argument being made in the form it's being made about — the visitor's
+ * first impression is a thought that arrived whole and unfolds at the pace it
+ * was meant to be read at, rather than a wall of text explaining that it could.
  *
- * Beats hold more than one line each. Untimed segments join the beat above, so a
- * pair of lines lands together and then the thread waits.
+ * The script does three jobs in order and never announces any of them: it warms
+ * up on something everyone has an opinion about, uses the pauses to land a
+ * punchline that only works *because* it was timed, and then quietly explains
+ * that you can type back.
+ *
+ * A beat's `hold` is the pause *after* it, so each number below is the gap
+ * before the following line — the last one's is never read.
  *
  * `minutesAgo` is how long before "now" it was sent.
  */
@@ -42,23 +46,26 @@ const SCRIPT: readonly {
     mode: "timeline",
     minutesAgo: 4,
     body: [
-      beat("ok hear me out", 1_000),
-      { kind: "text", text: "...I think messages are broken" },
-
       beat(
-        "...you know when someone sends a joke and the timing is the entire joke",
-        2_600
+        "Lord of the rings is probably the greatest piece of fiction ever captured on screen",
+        3_000
       ),
+      beat("A close second to me is....", 2_000),
+      beat("World of Warcraft", 2_500),
+      beat("that isn't captured well on screen though, but", 3_500),
+      beat("it's a really cool story as well!", 5_000),
+      beat("Here is my favorite character from warcraft", 3_000),
       {
-        kind: "text",
-        text: "and the only way to land it is to go record a video of yourself typing it....... ",
+        kind: "gif",
+        assetId: "lich",
+        timing: { hold: 5_500, enter: DEFAULT_BEAT_ENTER },
       },
-
-      beat("which is insane. it's a text message", 5_000),
-      {
-        kind: "text",
-        text: "now imagine this... what if the message just knew how it was supposed to be read",
-      },
+      beat("btw....", 2_000),
+      beat(
+        "you can chat here and I will blurt out random messages at you as a simulator.",
+        3_500
+      ),
+      beat("psst: don't forget to give feedback to the real Ammar~ :)", 5_000),
     ],
   },
 ]

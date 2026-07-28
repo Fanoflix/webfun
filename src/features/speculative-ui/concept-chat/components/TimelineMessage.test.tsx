@@ -2,7 +2,11 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_BEAT_ENTER, REPLAY_GAP_MS } from "../engine/defaults"
+import {
+  DEFAULT_BEAT_ENTER,
+  PLAY_TAIL_MS,
+  REPLAY_GAP_MS,
+} from "../engine/defaults"
 import type { Message, Segment } from "../engine/types"
 import { TimelineMessage } from "./TimelineMessage"
 
@@ -183,7 +187,7 @@ describe("TimelineMessage", () => {
     act(() => void vi.advanceTimersByTime(REPLAY_GAP_MS))
     expect(phase()).toBe("playing")
 
-    act(() => void vi.advanceTimersByTime(2_000))
+    act(() => void vi.advanceTimersByTime(2_000 + PLAY_TAIL_MS))
     expect(phase()).toBe("done")
     // `getAllBy`: the wound-back copy is still mounted here, because jsdom never
     // finishes its exit animation. A browser removes it.
@@ -197,10 +201,31 @@ describe("TimelineMessage", () => {
     expect(screen.queryByRole("button", { name: "Play message" })).toBeNull()
   })
 
-  it("plays a one-beat message instantly rather than waiting on nothing", () => {
+  it("keeps the loader running past the last beat, then settles", () => {
+    // The run used to end on the frame the punchline landed, which reads as
+    // being cut off rather than finishing.
+    const { onFinish } = renderMessage()
+
+    fireEvent.click(screen.getByRole("button", { name: "Play message" }))
+    act(() => void vi.advanceTimersByTime(2_000))
+
+    expect(screen.getByText("three")).toBeTruthy()
+    expect(phase()).toBe("playing")
+    expect(onFinish).not.toHaveBeenCalled()
+
+    act(() => void vi.advanceTimersByTime(PLAY_TAIL_MS))
+
+    expect(phase()).toBe("done")
+    expect(onFinish).toHaveBeenCalledWith("m1")
+  })
+
+  it("waits out the tail even with a single beat and nothing to play", () => {
     const { onFinish } = renderMessage({ body: [beat("only", 1_000)] })
 
     fireEvent.click(screen.getByRole("button", { name: "Play message" }))
+    expect(onFinish).not.toHaveBeenCalled()
+
+    act(() => void vi.advanceTimersByTime(PLAY_TAIL_MS))
 
     expect(onFinish).toHaveBeenCalledWith("m1")
     expect(screen.getByRole("button", { name: "Replay" })).toBeTruthy()

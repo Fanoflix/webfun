@@ -132,7 +132,7 @@ const RailIcon = Activity
 const RAIL_ICON_BOX = "absolute top-4 -left-7.5 size-4"
 
 /** The same glyph repeated at the foot of the rail, beside the replay control. */
-const REPLAY_ICON_BOX = "absolute top-0 -left-7.5 size-4"
+const REPLAY_ICON_BOX = "absolute top-0 -left-7.75 size-4"
 
 /**
  * One end-to-end pass of the loader segment, in seconds.
@@ -217,8 +217,8 @@ function Rail({
           than a notch *in* it, and drawn in the rail's own colour — it marks the
           message, it isn't a second control competing with the real play
           button below. */}
-      <span aria-hidden className={`${RAIL_ICON_BOX} text-muted-foreground/20`}>
-        <RailIcon className="size-full stroke-2" />
+      <span aria-hidden className={`${RAIL_ICON_BOX} text-foreground/10`}>
+        <RailIcon className="stroke-1.25 size-full" />
       </span>
 
       {/* The glyph pulses by stacking a full-contrast copy over the resting one
@@ -235,7 +235,7 @@ function Rail({
           className={`${RAIL_ICON_BOX} text-foreground`}
           {...PULSE}
         >
-          <RailIcon className="size-full stroke-2" />
+          <RailIcon className="stroke-1.25 size-full" />
         </motion.span>
       )}
 
@@ -272,7 +272,7 @@ function Rail({
             repeatDelay: Math.max(0, LOADER_CYCLE_S - ICON_FLASH_S),
           }}
         >
-          <RailIcon className="size-full stroke-2" />
+          <RailIcon className="stroke-1.25 size-full" />
         </motion.span>
       )}
 
@@ -450,11 +450,8 @@ function ReplayButton({ onReplay }: { onReplay: () => void }) {
           Stacked bright-over-muted for the same reason as the rail's: the flash
           has to be theme-correct without naming a colour, and an opacity
           overlay can't be painted across an outlined glyph. */}
-      <span
-        aria-hidden
-        className={`${REPLAY_ICON_BOX} text-muted-foreground/20`}
-      >
-        <RailIcon className="size-full stroke-2" />
+      <span aria-hidden className={`${REPLAY_ICON_BOX} text-foreground/10`}>
+        <RailIcon className="stroke-1.25 size-full -scale-x-100" />
       </span>
       {!reduced && (
         <motion.span
@@ -462,7 +459,7 @@ function ReplayButton({ onReplay }: { onReplay: () => void }) {
           className={`${REPLAY_ICON_BOX} text-foreground`}
           {...PULSE}
         >
-          <RailIcon className="size-full stroke-2" />
+          <RailIcon className="stroke-1.25 size-full -scale-x-100" />
         </motion.span>
       )}
 

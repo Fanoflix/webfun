@@ -90,6 +90,18 @@ export const DEFAULT_HOLD_MS = 1_500
 export const BEAT_REWIND_MS = 200
 
 /**
+ * How long the loader keeps running after the final beat lands, before the
+ * message is marked finished.
+ *
+ * Without it the performance stops dead on the punchline — the loader vanishes
+ * and the full stop fires on the same frame the last line appears, which reads
+ * as the message being cut off rather than ending. This is a fixed tail rather
+ * than the last beat's `hold`: a hold is the gap before the *next* beat, and
+ * there isn't one, so that number stays ignored no matter what it's set to.
+ */
+export const PLAY_TAIL_MS = 1_500
+
+/**
  * The pause between pressing replay and the message starting again.
  *
  * Flat, and deliberately independent of the first beat's own hold: this is the
