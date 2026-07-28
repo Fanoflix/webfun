@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
+import { useSidebar } from "@/components/ui/sidebar"
 import { useFlags } from "@/features/flags/useFlags"
 import { navGroups } from "./nav-items"
 import type { NavGroup, NavItem } from "./nav-items"
@@ -31,6 +32,8 @@ function itemMatches(item: NavItem, groupLabel: string, query: string): boolean 
 export type SidebarNav = {
   query: string
   setQuery: (value: string) => void
+  /** The search field. `⌘K` focuses it from anywhere in the app. */
+  inputRef: React.RefObject<HTMLInputElement | null>
   /** Groups after search filtering; empty groups are dropped. */
   groups: NavGroup[]
   isOpen: (label: string) => boolean
@@ -50,6 +53,28 @@ export function useSidebarNav(): SidebarNav {
   const [debounced, setDebounced] = useState("")
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const { unlocked, isVisible } = useFlags()
+
+  const inputRef = useRef<HTMLInputElement>(null)
+  const { isMobile, setOpen, setOpenMobile } = useSidebar()
+
+  /**
+   * `⌘K` from anywhere jumps to search, opening the rail first if it's away.
+   *
+   * Bound on the window rather than the field, since the whole point is to reach
+   * it when it isn't on screen — and the focus is deferred a frame because a
+   * panel that's still sliding in can't take it yet.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "k" || !(event.metaKey || event.ctrlKey)) return
+      event.preventDefault()
+      if (isMobile) setOpenMobile(true)
+      else setOpen(true)
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [isMobile, setOpen, setOpenMobile])
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query), SEARCH_DEBOUNCE_MS)
@@ -88,5 +113,5 @@ export function useSidebarNav(): SidebarNav {
     })
   }
 
-  return { query, setQuery, groups, isOpen, toggle }
+  return { query, setQuery, inputRef, groups, isOpen, toggle }
 }

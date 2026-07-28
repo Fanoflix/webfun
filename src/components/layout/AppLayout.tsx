@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar"
 import { ToolGate } from "@/features/flags/ToolGate"
 import { AppSidebar } from "@/features/sidebar/AppSidebar"
+import { SearchHint } from "@/features/sidebar/SearchHint"
 
 /**
  * The toggle lives *inside* the sidebar while it's open; this one shows in the
@@ -18,7 +19,14 @@ import { AppSidebar } from "@/features/sidebar/AppSidebar"
 function InsetSidebarTrigger() {
   const { state, isMobile } = useSidebar()
   if (!isMobile && state !== "collapsed") return null
-  return <SidebarTrigger />
+  return (
+    // The shortcut hint rides along here because this is exactly when it's worth
+    // knowing: the search field it jumps to isn't on screen to advertise itself.
+    <div className="group flex items-center gap-2">
+      <SidebarTrigger />
+      <SearchHint />
+    </div>
+  )
 }
 
 export function AppLayout() {

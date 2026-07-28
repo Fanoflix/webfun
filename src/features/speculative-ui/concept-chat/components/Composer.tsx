@@ -146,9 +146,13 @@ export function Composer({
           inputRef={composer.inputRef}
           placeholder={
             timeline.active
-              ? `Beat ${timeline.selectedIndex + 1} — Enter for the next`
+              ? `Beat ${timeline.selectedIndex + 1} — Enter for next`
               : "Message FakeAmmar"
           }
+          // Italic only in timeline mode: the placeholder stops naming the
+          // recipient and starts explaining a control, so it shouldn't read as
+          // something that was typed.
+          italicPlaceholder={timeline.active}
         />
 
         <EmojiPicker
@@ -204,12 +208,14 @@ function AutoGrowTextarea({
   onKeyDown,
   inputRef,
   placeholder,
+  italicPlaceholder = false,
 }: {
   value: string
   onChange: (value: string) => void
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void
   inputRef: ComposerApi["inputRef"]
   placeholder: string
+  italicPlaceholder?: boolean
 }) {
   return (
     <div className="grid max-h-44 flex-1 overflow-y-auto">
@@ -220,7 +226,10 @@ function AutoGrowTextarea({
         onKeyDown={onKeyDown}
         rows={1}
         placeholder={placeholder}
-        className="col-start-1 row-start-1 resize-none overflow-hidden bg-transparent px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none"
+        className={cn(
+          "col-start-1 row-start-1 resize-none overflow-hidden bg-transparent px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none",
+          italicPlaceholder && "placeholder:italic"
+        )}
       />
       <span
         aria-hidden

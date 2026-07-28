@@ -73,7 +73,23 @@ export function useTimelineComposer(
    */
   const [stored, setStored] = useState<Beat[]>([])
 
-  const { draftBody, loadDraft } = composer
+  const { draftBody, inputRef } = composer
+
+  /**
+   * Selecting a beat is the same gesture as clicking into a text field — the
+   * card *is* the editor's contents. Leaving focus behind means the next
+   * keystroke goes nowhere, which reads as the click not having worked.
+   *
+   * The hold chip deliberately doesn't do this: picking a duration isn't
+   * choosing what to type into.
+   */
+  const loadDraft = useCallback(
+    (segments: Segment[]) => {
+      composer.loadDraft(segments)
+      inputRef.current?.focus()
+    },
+    [composer, inputRef]
+  )
 
   /** `stored`, with the editor's current contents written over the selection. */
   const withDraft = useCallback(
@@ -101,13 +117,19 @@ export function useTimelineComposer(
 
   const select = useCallback(
     (index: number) => {
-      if (index === selectedIndex) return
+      // Re-selecting the beat you're already on still puts the caret back: the
+      // click landed on a button, which took focus off the editor, and typing
+      // has to keep working straight afterwards.
+      if (index === selectedIndex) {
+        inputRef.current?.focus()
+        return
+      }
       const next = withDraft(stored)
       setStored(next)
       setSelectedIndex(index)
       loadDraft(next[index].segments)
     },
-    [loadDraft, selectedIndex, stored, withDraft]
+    [inputRef, loadDraft, selectedIndex, stored, withDraft]
   )
 
   const addBeat = useCallback(() => {

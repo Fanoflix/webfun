@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { Beat } from "./beats"
+import { REPLAY_GAP_MS } from "./defaults"
 
 /**
  * Plays a timeline message: beats land one after another and stay.
@@ -15,14 +16,21 @@ import type { Beat } from "./beats"
  * component would set state on a corpse.
  */
 
-export type PlaybackPhase = "idle" | "playing" | "done"
+export type PlaybackPhase = "idle" | "rewinding" | "playing" | "done"
 
 export type TimelinePlayback = {
   phase: PlaybackPhase
   /** How many beats to render. `1` while idle — the poster is the first beat. */
   visibleCount: number
+  /**
+   * Increments on every run. The view keys beats off it, so starting a run
+   * re-mounts them and they animate in again — including the first, which was
+   * already on screen as the poster and would otherwise just sit there while
+   * everything after it performed.
+   */
+  runId: number
   play: () => void
-  /** Back to the poster, then straight into playing again. */
+  /** Winds the beats back down, *then* runs again. */
   replay: () => void
 }
 
@@ -46,6 +54,7 @@ export function useTimelinePlayback(
   const [visibleCount, setVisibleCount] = useState(
     initiallyDone ? beats.length : 1
   )
+  const [runId, setRunId] = useState(0)
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
@@ -66,6 +75,7 @@ export function useTimelinePlayback(
   const start = useCallback(() => {
     clearAll()
     setVisibleCount(1)
+    setRunId((id) => id + 1)
     setPhase("playing")
     handlers.current.onBeatLand?.()
 
@@ -98,5 +108,21 @@ export function useTimelinePlayback(
     })
   }, [beats, clearAll])
 
-  return { phase, visibleCount, play: start, replay: start }
+  /**
+   * Clears the message, waits, then runs it again.
+   *
+   * `visibleCount` goes to zero rather than one: the first beat cuts out on the
+   * frame you press replay, and the beats after it collapse away over
+   * `BEAT_REWIND_MS`. Then nothing, flat, until `REPLAY_GAP_MS` — the breath
+   * before it starts over, held apart from the first beat's own hold so the
+   * restart never depends on how the message happens to be authored.
+   */
+  const replay = useCallback(() => {
+    clearAll()
+    setPhase("rewinding")
+    setVisibleCount(0)
+    timers.current.push(setTimeout(start, REPLAY_GAP_MS))
+  }, [clearAll, start])
+
+  return { phase, visibleCount, runId, play: start, replay }
 }

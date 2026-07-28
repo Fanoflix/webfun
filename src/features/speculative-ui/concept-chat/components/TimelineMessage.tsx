@@ -1,11 +1,11 @@
 import { Play, RotateCcw } from "lucide-react"
-import { motion, useReducedMotion } from "motion/react"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useCallback, useMemo, useRef } from "react"
 
 import { toBeats, totalDurationMs } from "../engine/beats"
 import type { Beat } from "../engine/beats"
 import { BEAT_ENTERS } from "../engine/beatEnters"
-import { CHAT_EASE } from "../engine/defaults"
+import { BEAT_REWIND_MS, CHAT_EASE } from "../engine/defaults"
 import { formatCountdown } from "../engine/time"
 import type { Message } from "../engine/types"
 import { useTimelinePlayback } from "../engine/useTimelinePlayback"
@@ -39,11 +39,14 @@ export function TimelineMessage({
 
   const finish = useCallback(() => onFinish(message.id), [message.id, onFinish])
 
-  const { phase, visibleCount, play, replay } = useTimelinePlayback(beats, {
-    initiallyDone: message.played === true,
-    onBeatLand,
-    onFinish: finish,
-  })
+  const { phase, visibleCount, runId, play, replay } = useTimelinePlayback(
+    beats,
+    {
+      initiallyDone: message.played === true,
+      onBeatLand,
+      onFinish: finish,
+    }
+  )
 
   /**
    * Beats present at mount don't animate, for the same reason seeded messages
@@ -66,61 +69,105 @@ export function TimelineMessage({
     )
   }
 
+  const running = phase === "playing" || phase === "rewinding"
+
   return (
-    /**
-     * The rail in the gutter is what says "this one performs itself" at a
-     * glance — present from the moment it arrives, through the play, and after
-     * it rests, so a played message stays visibly different from the plain text
-     * around it rather than becoming indistinguishable the moment it finishes.
-     *
-     * Drawn as a pseudo-element in the space that's already empty to the left of
-     * the text, so marking a message costs no layout and shifts nothing.
-     */
     <div
       data-slot="timeline-message"
-      className={`relative space-y-1 before:absolute before:inset-y-0 before:-left-3 before:w-px before:transition-colors before:duration-200 ${
-        phase === "playing" ? "before:bg-foreground/50" : "before:bg-border"
-      }`}
+      data-phase={phase}
+      className="relative space-y-1"
     >
-      {beats.slice(0, visibleCount).map((beat, index) => (
-        <BeatView key={beat.id} beat={beat} animates={index >= mountedCount} />
-      ))}
+      <Rail running={running} stopsAtReplay={phase === "done"} />
+
+      {/* The first beat is the poster and never leaves, so it sits outside
+          `AnimatePresence` — inside, a run's re-key would mount the new copy
+          while the old one was still animating out, and the message would
+          briefly show the same line twice. */}
+      {visibleCount > 0 && beats.length > 0 && (
+        <BeatView
+          // Keyed by run, so starting one re-mounts it and it fades in again
+          // rather than sitting inert while everything after it performs.
+          key={`${runId}-${beats[0].id}`}
+          beat={beats[0]}
+          isFirst
+          animates={runId > 0}
+        />
+      )}
+
+      {/* Exits are what make a replay wind back rather than blink out. */}
+      <AnimatePresence initial={false}>
+        {beats.slice(1, visibleCount).map((beat, index) => (
+          <BeatView
+            key={`${runId}-${beat.id}`}
+            beat={beat}
+            isFirst={false}
+            animates={runId > 0 || index + 1 >= mountedCount}
+          />
+        ))}
+      </AnimatePresence>
 
       {phase === "idle" && (
         <PlayButton durationMs={totalDurationMs(beats)} onPlay={play} />
       )}
-      {phase === "playing" && <PlayingBar />}
       {phase === "done" && <ReplayButton onReplay={replay} />}
     </div>
   )
 }
 
 /**
- * An indeterminate bar while beats are landing — deliberately *not* a progress
- * bar. Progress invites you to watch the bar and predict the end; this only says
- * "something is still coming", which is the anticipation the whole idea trades
- * on. It also sits in the slot the play button just vacated, so the message
- * doesn't reflow when you press it.
+ * The gutter rail: both the mark that says "this one performs itself" and the
+ * loader while it does.
  *
- * The one animation in this module that isn't expo out: a ping-pong wants to
- * ease at both ends, and expo out would slam into each turn.
+ * It's present from the moment the message arrives, through the play, and after
+ * it rests — a played message that loses its mark becomes indistinguishable
+ * from the plain text around it, which throws away the fact that it *was* a
+ * performance.
+ *
+ * While running, a segment travels it. Deliberately indeterminate rather than a
+ * progress bar: progress invites you to watch the bar and predict the end,
+ * where this only says something is still coming — which is the anticipation
+ * the whole idea trades on. Reusing the mark as the loader also means playing
+ * adds no new element to the message, so nothing reflows when you press play.
+ *
+ * Absolutely positioned in space that was already empty, so none of this costs
+ * any layout.
  */
-function PlayingBar() {
+function Rail({
+  running,
+  stopsAtReplay,
+}: {
+  running: boolean
+  /**
+   * At rest the rail stops halfway down the replay row instead of running to
+   * the bottom, so the hairline coming out of the control meets its end and the
+   * two read as one elbow. `bottom-2` is exactly half of that row's `h-4`.
+   */
+  stopsAtReplay: boolean
+}) {
   return (
     <div
-      data-slot="playing-bar"
-      className="mt-1.5 h-px w-13 overflow-hidden bg-border"
+      data-slot="rail"
+      data-running={running || undefined}
+      className={`absolute top-0 -left-3 w-px overflow-hidden bg-border ${
+        stopsAtReplay ? "bottom-2" : "bottom-0"
+      }`}
     >
-      <motion.div
-        className="h-full w-1/3 bg-foreground/70"
-        animate={{ x: ["0%", "200%"] }}
-        transition={{
-          duration: 0.9,
-          ease: "easeInOut",
-          repeat: Infinity,
-          repeatType: "reverse",
-        }}
-      />
+      {running && (
+        <motion.div
+          className="h-1/3 w-full bg-foreground/70"
+          animate={{ y: ["0%", "200%"] }}
+          /**
+           * The one animation here that isn't expo out. A ping-pong wants to
+           * ease at both ends; expo out would slam into every turn.
+           */
+          transition={{
+            duration: 0.9,
+            ease: "easeInOut",
+            repeat: Infinity,
+            repeatType: "reverse",
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -132,15 +179,50 @@ function PlayingBar() {
  *
  * The beat's `enter` rides on top of that, with its own duration: making room and
  * appearing are two different things and want different timing.
+ *
+ * The **first** beat is the exception, and only fades. It's replacing the poster,
+ * which already occupies exactly its height, so animating height there would
+ * collapse the message and re-expand it for no reason — a flinch at the very
+ * moment the performance is meant to begin.
  */
-function BeatView({ beat, animates }: { beat: Beat; animates: boolean }) {
+function BeatView({
+  beat,
+  isFirst,
+  animates,
+}: {
+  beat: Beat
+  isFirst: boolean
+  animates: boolean
+}) {
   const enter = BEAT_ENTERS[beat.enter]
+  const sizes = !isFirst
 
   return (
     <motion.div
       data-slot="beat"
-      initial={animates ? { height: 0, ...enter.initial } : false}
-      animate={{ height: "auto", ...enter.animate }}
+      initial={
+        animates ? { ...(sizes ? { height: 0 } : {}), ...enter.initial } : false
+      }
+      animate={{ ...(sizes ? { height: "auto" } : {}), ...enter.animate }}
+      /**
+       * The first beat cuts out with no animation at all — animating the line
+       * you're looking at straight out of existence reads as a glitch, where a
+       * hard cut reads as a deliberate stop. Everything after it collapses over
+       * `BEAT_REWIND_MS`, pinned to that constant so the wind-back and the
+       * animation can't drift apart.
+       */
+      exit={
+        sizes
+          ? {
+              height: 0,
+              ...enter.initial,
+              transition: {
+                duration: BEAT_REWIND_MS / 1_000,
+                ease: CHAT_EASE,
+              },
+            }
+          : { opacity: 0, transition: { duration: 0 } }
+      }
       transition={
         animates
           ? {
@@ -195,14 +277,38 @@ function PlayButton({
  * watch again is a performance you only half-watched the first time.
  */
 function ReplayButton({ onReplay }: { onReplay: () => void }) {
+  const reduced = useReducedMotion()
+
   return (
-    <button
-      type="button"
-      onClick={onReplay}
-      className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
-    >
-      <RotateCcw className="size-2.5" />
-      Replay
-    </button>
+    // `h-4` is load-bearing: the rail stops at `bottom-2`, exactly half of it,
+    // so the hairline below meets the rail's end rather than crossing it.
+    <div className="relative mt-1.5 flex h-4 items-center">
+      {/* A hairline grows out of the gutter rail to meet the control, half a
+          second after the message settles. The delay is the point: it arrives
+          *after* the last beat has been read, closing the message off rather
+          than competing with the line that just landed. Playing again unmounts
+          it on the spot — a rail that's loading shouldn't still be tied to a
+          control you can't use. */}
+      <motion.span
+        aria-hidden
+        data-slot="replay-connector"
+        className="absolute top-1/2 -left-3 h-px bg-border"
+        initial={{ width: 0 }}
+        animate={{ width: "0.75rem" }}
+        transition={
+          reduced
+            ? { duration: 0 }
+            : { duration: 0.2, delay: 0.5, ease: CHAT_EASE }
+        }
+      />
+      <button
+        type="button"
+        onClick={onReplay}
+        className="flex items-center gap-1.5 text-[11px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
+      >
+        <RotateCcw className="size-2.5" />
+        Replay
+      </button>
+    </div>
   )
 }

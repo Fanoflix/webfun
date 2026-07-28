@@ -1,5 +1,5 @@
 import { Popover } from "@base-ui/react/popover"
-import { Trash2 } from "lucide-react"
+import { RotateCcw, Trash2 } from "lucide-react"
 import { useAnimate, useReducedMotion } from "motion/react"
 import { useState } from "react"
 
@@ -102,7 +102,7 @@ function ExpiryRow({
   }
 
   return (
-    <div className="flex items-center justify-between gap-2 px-2 pb-1 text-[10px] font-semibold text-muted-foreground uppercase">
+    <div className="flex items-center justify-between gap-2 px-2 pb-1.5 text-[10px] font-semibold text-muted-foreground uppercase">
       <span className="flex min-w-0 gap-1.5 truncate">
         <span>Demo resets in </span>
         {/* `inline-block` so the scale applies — transforms are ignored on
@@ -114,12 +114,17 @@ function ExpiryRow({
           {formatCountdown(remainingMs)}
         </span>
       </span>
+      {/* Bordered rather than bare text. It was the only control in the rail
+          with nothing to distinguish it from the label beside it, so it read as
+          part of the sentence — and a countdown you can't tell is stoppable is
+          just a threat. */}
       <button
         type="button"
         onClick={extend}
         aria-label="Restart the reset timer"
-        className="shrink-0 whitespace-nowrap transition-colors duration-150 hover:text-foreground"
+        className="flex shrink-0 cursor-pointer items-center gap-1 border border-border px-1.5 py-0.5 whitespace-nowrap transition-colors duration-150 hover:border-foreground hover:text-foreground"
       >
+        <RotateCcw className="size-2.5" />
         Reset timer
       </button>
     </div>

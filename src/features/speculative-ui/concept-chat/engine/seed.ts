@@ -42,7 +42,7 @@ const SCRIPT: readonly {
     mode: "timeline",
     minutesAgo: 4,
     body: [
-      beat("ok hear me out", 2_000),
+      beat("ok hear me out", 1_000),
       { kind: "text", text: "...I think messages are broken" },
 
       beat(
@@ -54,7 +54,7 @@ const SCRIPT: readonly {
         text: "and the only way to land it is to go record a video of yourself typing it....... ",
       },
 
-      beat("which is insane. it's a text message", 1_000),
+      beat("which is insane. it's a text message", 5_000),
       {
         kind: "text",
         text: "now imagine this... what if the message just knew how it was supposed to be read",

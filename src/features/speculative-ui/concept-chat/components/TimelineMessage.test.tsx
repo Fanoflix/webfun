@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_BEAT_ENTER } from "../engine/defaults"
+import { DEFAULT_BEAT_ENTER, REPLAY_GAP_MS } from "../engine/defaults"
 import type { Message, Segment } from "../engine/types"
 import { TimelineMessage } from "./TimelineMessage"
 
@@ -40,6 +40,19 @@ function renderMessage(overrides: Partial<Message> = {}) {
   return { onFinish, onBeatLand }
 }
 
+/**
+ * Read off the DOM rather than inferred from what's rendered: motion keeps an
+ * exiting beat mounted until its animation finishes, and jsdom doesn't drive
+ * that reliably — so "has it wound back yet" is asserted from the phase.
+ */
+function phase(): string | undefined {
+  return (
+    document
+      .querySelector('[data-slot="timeline-message"]')
+      ?.getAttribute("data-phase") ?? undefined
+  )
+}
+
 beforeEach(() => {
   vi.useFakeTimers()
 })
@@ -72,30 +85,31 @@ describe("TimelineMessage", () => {
     expect(replay.className).not.toMatch(/opacity-0/)
   })
 
-  it("runs an indeterminate bar only while beats are landing", () => {
-    renderMessage()
-    const bar = () => document.querySelector('[data-slot="playing-bar"]')
-
-    expect(bar()).toBeNull()
-
-    fireEvent.click(screen.getByRole("button", { name: "Play message" }))
-    expect(bar()).not.toBeNull()
-
-    act(() => void vi.advanceTimersByTime(5_000))
-    expect(bar()).toBeNull()
-  })
-
   it("marks itself as playable for as long as it exists", () => {
     // Idle, playing and rested all keep the gutter rail — a played message
     // should stay visibly different from the plain text around it.
     renderMessage()
-    const rail = () => document.querySelector('[data-slot="timeline-message"]')
+    const rail = () => document.querySelector('[data-slot="rail"]')
 
     expect(rail()).not.toBeNull()
     fireEvent.click(screen.getByRole("button", { name: "Play message" }))
     expect(rail()).not.toBeNull()
     act(() => void vi.advanceTimersByTime(5_000))
     expect(rail()).not.toBeNull()
+  })
+
+  it("runs the rail as a loader only while beats are landing", () => {
+    renderMessage()
+    const running = () =>
+      document.querySelector('[data-slot="rail"]')?.hasAttribute("data-running")
+
+    expect(running()).toBe(false)
+
+    fireEvent.click(screen.getByRole("button", { name: "Play message" }))
+    expect(running()).toBe(true)
+
+    act(() => void vi.advanceTimersByTime(5_000))
+    expect(running()).toBe(false)
   })
 
   it("does not autoplay — nothing moves until it's pressed", () => {
@@ -151,18 +165,29 @@ describe("TimelineMessage", () => {
     expect(screen.getByRole("button", { name: "Replay" })).toBeTruthy()
   })
 
-  it("rewinds to the poster on replay", () => {
+  it("winds back before running again, rather than blinking out", () => {
     renderMessage()
 
     fireEvent.click(screen.getByRole("button", { name: "Play message" }))
     act(() => void vi.advanceTimersByTime(5_000))
     fireEvent.click(screen.getByRole("button", { name: "Replay" }))
 
-    expect(screen.queryByText("three")).toBeNull()
+    // It winds back first rather than restarting on the same frame, and the
+    // rail keeps loading throughout — one continuous motion, not a dead pause
+    // followed by a start.
+    expect(phase()).toBe("rewinding")
+    expect(
+      document.querySelector('[data-slot="rail"]')?.hasAttribute("data-running")
+    ).toBe(true)
+
+    act(() => void vi.advanceTimersByTime(REPLAY_GAP_MS))
+    expect(phase()).toBe("playing")
 
     act(() => void vi.advanceTimersByTime(2_000))
-
-    expect(screen.getByText("three")).toBeTruthy()
+    expect(phase()).toBe("done")
+    // `getAllBy`: the wound-back copy is still mounted here, because jsdom never
+    // finishes its exit animation. A browser removes it.
+    expect(screen.getAllByText("three").length).toBeGreaterThan(0)
   })
 
   it("comes back finished when it has already been played", () => {

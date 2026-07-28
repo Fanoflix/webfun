@@ -79,6 +79,25 @@ export const HOLD_PRESETS: { label: string; ms: number }[] = [
 /** What a new beat gets, and what a beat with no timing is read as. */
 export const DEFAULT_HOLD_MS = 1_500
 
+/**
+ * How long the beats after the first take to collapse on a replay. Shared with
+ * their exit animation so the two can't drift apart.
+ *
+ * The first beat isn't part of this — it cuts out on the frame you press
+ * replay. Animating the thing you're looking at straight out of existence reads
+ * as a glitch; cutting it reads as a deliberate stop.
+ */
+export const BEAT_REWIND_MS = 200
+
+/**
+ * The pause between pressing replay and the message starting again.
+ *
+ * Flat, and deliberately independent of the first beat's own hold: this is the
+ * breath before it starts over, not part of the performance. Long enough that
+ * the restart is clearly a restart rather than a flicker.
+ */
+export const REPLAY_GAP_MS = 750
+
 export const DEFAULT_BEAT_ENTER: BeatEnter = "fade"
 
 /**

@@ -122,6 +122,7 @@ export function TimelineComposer({
             selected={index === selectedIndex}
             isLast={index === beats.length - 1}
             onSelect={() => select(index)}
+            onRemove={() => removeBeat(index)}
             onCycleHold={() => setHold(index, nextHold(beat.hold))}
           />
         ))}
@@ -149,6 +150,7 @@ function BeatCard({
   selected,
   isLast,
   onSelect,
+  onRemove,
   onCycleHold,
 }: {
   beat: Beat
@@ -156,6 +158,7 @@ function BeatCard({
   selected: boolean
   isLast: boolean
   onSelect: () => void
+  onRemove: () => void
   onCycleHold: () => void
 }) {
   const preset = HOLD_PRESETS.find((option) => option.ms === beat.hold)
@@ -163,10 +166,22 @@ function BeatCard({
   return (
     <div
       className={cn(
-        "flex h-16 w-24 shrink-0 flex-col border",
+        "group/beat relative flex h-16 w-24 shrink-0 flex-col border",
         selected ? "border-foreground" : "border-border"
       )}
     >
+      {/* On the card as well as in the header: the header acts on whatever's
+          selected, which means throwing away a beat first requires selecting
+          it — two steps and a moment of "wait, which one is this". */}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove beat ${index + 1}`}
+        className="absolute -top-px -right-px z-10 flex size-4 items-center justify-center border border-border bg-background text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/beat:opacity-100 hover:text-destructive focus-visible:opacity-100"
+      >
+        <X className="size-2.5" />
+      </button>
+
       <button
         type="button"
         onClick={onSelect}
