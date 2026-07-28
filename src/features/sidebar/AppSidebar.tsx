@@ -32,9 +32,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="floating" className="p-4">
-      <SidebarHeader className="gap-2">
+      <SidebarHeader className="gap-0.5">
         <div className="flex items-center justify-between">
-          <div className="px-1 py-1 text-sm font-semibold tracking-widest uppercase">
+          <div className="px-1 py-1 text-xs font-semibold tracking-widest uppercase">
             webfun
           </div>
           <SidebarTrigger />
@@ -46,32 +46,38 @@ export function AppSidebar() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search tools…"
             aria-label="Search tools"
-            className="pl-8"
+            className="pl-8 text-xs"
           />
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="gap-2">
+      <SidebarContent className="gap-0.5">
         {groups.map((group) => (
           <Collapsible
             key={group.label}
             open={isOpen(group.label)}
             onOpenChange={(open) => toggle(group.label, open)}
           >
-            <SidebarGroup className="mx-2 w-auto rounded-lg bg-sidebar-foreground/[0.04] p-1">
-              <CollapsibleTrigger className="group/trigger flex h-8 w-full items-center rounded-md px-2 text-xs font-semibold tracking-wider text-sidebar-foreground/35 uppercase transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <SidebarGroup className="w-auto gap-0.5 p-0">
+              {/* Underline is the only hover state in the rail. Nothing here
+                  carries a background — not the category, not a row, not the
+                  active one — so the tools read as a list rather than a stack
+                  of chips, and the eye has one thing to follow instead of
+                  three competing tints. */}
+              <CollapsibleTrigger className="group/trigger flex w-full items-center px-2 py-1 text-xs font-semibold tracking-wider text-sidebar-foreground/35 uppercase transition-colors hover:text-sidebar-foreground hover:underline">
                 {group.label}
-                <Plus className="ml-auto size-4 transition-transform duration-200 group-data-[panel-open]/trigger:rotate-45" />
+                <Plus className="ml-auto size-3.5 transition-transform duration-200 group-data-[panel-open]/trigger:rotate-45" />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <SidebarGroupContent className="pt-1">
-                  <SidebarMenu>
+                <SidebarGroupContent>
+                  <SidebarMenu className="gap-0.5">
                     {group.items.map((item) => (
                       <SidebarMenuItem key={item.to}>
                         <SidebarMenuButton
                           isActive={pathname === item.to}
                           tooltip={item.title}
                           render={<Link to={item.to} />}
+                          className="h-auto px-2 py-1 text-xs hover:bg-transparent hover:text-sidebar-foreground hover:underline active:bg-transparent data-active:bg-transparent data-active:text-sidebar-foreground data-active:shadow-none"
                         >
                           <item.icon />
                           <span>{item.title}</span>
@@ -86,18 +92,18 @@ export function AppSidebar() {
         ))}
 
         {groups.length === 0 && (
-          <p className="px-3 py-2 text-xs text-muted-foreground">
+          <p className="px-2 py-1 text-xs text-muted-foreground">
             No tools match “{query}”.
           </p>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="gap-1.5 p-1.5">
+      <SidebarFooter className="gap-0.5 p-1.5">
         <a
           href={SITE_URL}
           target="_blank"
           rel="noreferrer"
-          className="px-1 text-xs text-muted-foreground transition-colors hover:text-sidebar-foreground"
+          className="px-1 text-xs text-muted-foreground transition-colors hover:text-sidebar-foreground hover:underline"
         >
           ammarnasir.com
         </a>
@@ -106,7 +112,7 @@ export function AppSidebar() {
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex flex-1 items-center justify-center gap-1.5 border border-sidebar-border px-2.5 py-1.5 text-xs whitespace-nowrap text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="flex flex-1 items-center justify-center gap-1.5 border border-sidebar-border px-2.5 py-1.5 text-xs whitespace-nowrap text-sidebar-foreground transition-colors hover:underline"
           >
             <Star className="size-3.5" />
             star // contribute
