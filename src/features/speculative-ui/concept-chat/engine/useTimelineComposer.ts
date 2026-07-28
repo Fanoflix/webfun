@@ -106,7 +106,11 @@ export function useTimelineComposer(
     setStored([newBeat(draftBody)])
     setSelectedIndex(0)
     setActive(true)
-  }, [draftBody])
+    // The click that opened this took focus off the editor, and the first thing
+    // anyone does next is type the opening beat. The textarea is the same one
+    // that was already there, so it can take focus straight away.
+    inputRef.current?.focus()
+  }, [draftBody, inputRef])
 
   const disable = useCallback(() => {
     setActive(false)

@@ -49,6 +49,13 @@ describe("timeline composing", () => {
     expect(screen.queryByText("Timeline")).toBeNull()
   })
 
+  it("puts the caret in the editor as it opens", () => {
+    render(<ChatFrame />)
+    enableTimeline()
+
+    expect(document.activeElement).toBe(input())
+  })
+
   it("opens with one beat, carrying whatever was already typed", () => {
     render(<ChatFrame />)
     type("ok hear me out")

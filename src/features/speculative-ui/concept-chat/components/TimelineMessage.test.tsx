@@ -74,7 +74,7 @@ describe("TimelineMessage", () => {
     renderMessage()
 
     expect(screen.getByRole("button", { name: "Play message" })).toBeTruthy()
-    expect(screen.getByText("This message is playable")).toBeTruthy()
+    expect(screen.getByText("Playable message")).toBeTruthy()
     expect(screen.getByText("0:02")).toBeTruthy()
   })
 

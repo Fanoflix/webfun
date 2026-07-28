@@ -1,4 +1,4 @@
-import { Play, RotateCcw } from "lucide-react"
+import { Activity, Play, RotateCcw } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useCallback, useMemo, useRef } from "react"
 
@@ -120,6 +120,59 @@ export function TimelineMessage({
 }
 
 /**
+ * The glyph that marks a message as one that performs itself.
+ *
+ * Named once because it's drawn twice — once resting, once as the copy that
+ * flashes when a message finishes — and the two must never disagree. Swapping
+ * the icon is this line and nothing else.
+ */
+const RailIcon = Activity
+
+/** Shared by every copy so the flashes land exactly on top of the resting one. */
+const RAIL_ICON_BOX = "absolute top-4 -left-7.5 size-4"
+
+/** The same glyph repeated at the foot of the rail, beside the replay control. */
+const REPLAY_ICON_BOX = "absolute top-0 -left-7.5 size-4"
+
+/**
+ * One end-to-end pass of the loader segment, in seconds.
+ *
+ * The segment ping-pongs, so it only arrives back at the glyph every *two*
+ * passes — that's the cycle everything below is timed against.
+ */
+const LOADER_SWEEP_S = 0.9
+
+/** Glyph to far end and back. The segment is at the glyph once per cycle. */
+const LOADER_CYCLE_S = LOADER_SWEEP_S * 2
+
+/**
+ * The single flash, as a set of motion props.
+ *
+ * Held here rather than inlined because three things fire it — the rail, the
+ * glyph at its head and the glyph beside the replay control — and a full stop
+ * that arrives in three instalments isn't a full stop.
+ */
+const PULSE = {
+  initial: { opacity: 0 },
+  animate: { opacity: [0, 1, 0] },
+  transition: {
+    duration: 2.15,
+    delay: REST_SETTLE_MS / 1_000,
+    ease: CHAT_EASE,
+  },
+}
+
+/**
+ * How long the glyph's flash lasts, each time the segment arrives at it.
+ *
+ * Independent of how *often* it fires — that's `LOADER_CYCLE_S`. A short flash
+ * inside a long cycle reads as the mark being struck; stretching it to fill the
+ * cycle turns it into a slow breathe, which says "waiting" rather than
+ * "something just happened".
+ */
+const ICON_FLASH_S = 0.6
+
+/**
  * The gutter rail: both the mark that says "this one performs itself" and the
  * loader while it does.
  *
@@ -146,12 +199,14 @@ function Rail({
   /** Non-null once the message has finished; changes per run so a replay re-fires. */
   pulseKey: number | null
   /**
-   * At rest the rail stops halfway down the replay row instead of running to
-   * the bottom, so the hairline coming out of the control meets its end and the
-   * two read as one elbow. `bottom-2` is exactly half of that row's `h-4`.
+   * At rest the rail stops short of the replay row rather than running to the
+   * bottom, leaving the glyph that sits beside that control clear of the line
+   * instead of struck through by it.
    */
   stopsAtReplay: boolean
 }) {
+  const reduced = useReducedMotion()
+
   return (
     <>
       {/* The glyph sits outside the line rather than inside it: the line clips
@@ -162,28 +217,86 @@ function Rail({
           than a notch *in* it, and drawn in the rail's own colour — it marks the
           message, it isn't a second control competing with the real play
           button below. */}
-      <Play
-        aria-hidden
-        className="absolute top-4 -left-5.5 size-2.5 fill-current text-border"
-      />
+      <span aria-hidden className={`${RAIL_ICON_BOX} text-muted-foreground/20`}>
+        <RailIcon className="size-full stroke-2" />
+      </span>
+
+      {/* The glyph pulses by stacking a full-contrast copy over the resting one
+          and fading it through, rather than animating the colour. Colour
+          animation would have to name a value, and no single one is right in
+          both themes; a second copy inherits whatever `text-foreground` means
+          wherever it lands. The overlay `Pulse` used on the bars can't work
+          here either — it paints a rectangle, which over an outlined glyph is
+          just a box. */}
+      {pulseKey !== null && !reduced && (
+        <motion.span
+          key={pulseKey}
+          aria-hidden
+          className={`${RAIL_ICON_BOX} text-foreground`}
+          {...PULSE}
+        >
+          <RailIcon className="size-full stroke-2" />
+        </motion.span>
+      )}
+
+      {/* While loading, the glyph lights up each time the segment comes back to
+          the top — so it reads as the head of the loader being struck rather
+          than as a separate thing blinking nearby.
+
+          Kept in step by sharing the period, not by watching the segment:
+          both start on the same commit and both are driven by elapsed time, so
+          they can't drift. The segment ping-pongs, which means it's at the top
+          once every two sweeps — hence the doubling. */}
+      {running && !reduced && (
+        <motion.span
+          aria-hidden
+          className={`${RAIL_ICON_BOX} text-foreground`}
+          // Up and back down over `ICON_FLASH_S`, then nothing until the segment
+          // comes round again.
+          //
+          // Crucially the flash is *centred* on the arrival, not started by it:
+          // it swells as the segment closes the last stretch and is spent by the
+          // time it's heading away again. Starting it on arrival instead leaves
+          // the glyph lit while the segment visibly leaves, which reads as a
+          // decay trailing the loader rather than the loader striking the mark.
+          //
+          // The wait is `repeatDelay` rather than dead keyframes stretched over
+          // a long `duration` with a `times` array — that shape animates across
+          // the whole cycle and can only ever be a snap followed by a slow fade.
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{
+            duration: ICON_FLASH_S,
+            ease: "easeInOut",
+            repeat: Infinity,
+            delay: LOADER_SWEEP_S - ICON_FLASH_S / 5,
+            repeatDelay: Math.max(0, LOADER_CYCLE_S - ICON_FLASH_S),
+          }}
+        >
+          <RailIcon className="size-full stroke-2" />
+        </motion.span>
+      )}
 
       <div
         data-slot="rail"
         data-running={running || undefined}
-        className={`absolute top-2 -left-7.5 w-px overflow-hidden bg-border ${
+        className={`absolute top-6 -left-7.5 w-px overflow-hidden bg-border ${
           stopsAtReplay ? "bottom-1" : "bottom-0"
         }`}
       >
         {running && (
           <motion.div
             className="h-1/3 w-full bg-foreground/70"
-            animate={{ y: ["0%", "200%"] }}
+            // Starts at the far end and rises *to* the glyph, so the first
+            // strike lands one sweep in rather than making you wait a whole
+            // cycle for it. Arrivals then fall on every `LOADER_CYCLE_S`, which
+            // is what the flash below is timed against.
+            animate={{ y: ["200%", "0%"] }}
             /**
              * The one animation here that isn't expo out. A ping-pong wants to
              * ease at both ends; expo out would slam into every turn.
              */
             transition={{
-              duration: 0.9,
+              duration: LOADER_SWEEP_S,
               ease: "easeInOut",
               repeat: Infinity,
               repeatType: "reverse",
@@ -213,14 +326,7 @@ function Pulse() {
     <motion.span
       aria-hidden
       className="absolute inset-0 bg-foreground"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1, 0] }}
-      transition={{
-        duration: 2,
-        times: [0, 0.5, 1],
-        delay: REST_SETTLE_MS / 1_000,
-        ease: CHAT_EASE,
-      }}
+      {...PULSE}
     />
   )
 }
@@ -316,8 +422,8 @@ function PlayButton({
       aria-label="Play message"
       className="mt-1.5 flex items-center gap-2 border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors duration-150 hover:border-foreground hover:text-foreground"
     >
-      <Play className="size-2.5 fill-current" />
-      <span>This message is playable</span>
+      <Play className="size-2 fill-current" />
+      <span className="text-[10px]">Playable message</span>
       <span className="font-mono tabular-nums opacity-60">
         {formatCountdown(durationMs)}
       </span>
@@ -333,35 +439,33 @@ function ReplayButton({ onReplay }: { onReplay: () => void }) {
   const reduced = useReducedMotion()
 
   return (
-    // `h-4` is load-bearing: the rail stops at `bottom-2`, exactly half of it,
-    // so the hairline below meets the rail's end rather than crossing it.
+    // `h-4` matches the glyph below, so the row is exactly the height of the
+    // mark sitting in its gutter and the rail's stopping point stays predictable.
     <div className="relative mt-1.5 flex h-4 items-center">
-      {/* A hairline grows out of the gutter rail to meet the control, half a
-          second after the message settles. The delay is the point: it arrives
-          *after* the last beat has been read, closing the message off rather
-          than competing with the line that just landed. Playing again unmounts
-          it on the spot — a rail that's loading shouldn't still be tied to a
-          control you can't use. */}
-      <motion.span
+      {/* The same glyph that heads the rail, repeated at the foot of it — so a
+          rested message is bracketed by the mark rather than trailing off. It
+          pulses on the same beat as the rail's, since they're two ends of one
+          punctuation, and the whole control unmounts the moment you play again.
+
+          Stacked bright-over-muted for the same reason as the rail's: the flash
+          has to be theme-correct without naming a colour, and an opacity
+          overlay can't be painted across an outlined glyph. */}
+      <span
         aria-hidden
-        data-slot="replay-connector"
-        className="absolute top-1/2 -left-7.5 h-px bg-border"
-        initial={{ width: 0 }}
-        animate={{ width: "0.75rem" }}
-        transition={
-          reduced
-            ? { duration: 0 }
-            : {
-                duration: 0.2,
-                delay: REST_SETTLE_MS / 1_000,
-                ease: CHAT_EASE,
-              }
-        }
+        className={`${REPLAY_ICON_BOX} text-muted-foreground/20`}
       >
-        {/* Flashes in step with the rail: the elbow completes and the whole
-            mark acknowledges it at once. */}
-        <Pulse />
-      </motion.span>
+        <RailIcon className="size-full stroke-2" />
+      </span>
+      {!reduced && (
+        <motion.span
+          aria-hidden
+          className={`${REPLAY_ICON_BOX} text-foreground`}
+          {...PULSE}
+        >
+          <RailIcon className="size-full stroke-2" />
+        </motion.span>
+      )}
+
       <button
         type="button"
         onClick={onReplay}
