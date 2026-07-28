@@ -98,6 +98,15 @@ export const BEAT_REWIND_MS = 200
  */
 export const REPLAY_GAP_MS = 750
 
+/**
+ * How long after a message finishes before it punctuates itself — the hairline
+ * draws out to the replay control and the rail pulses once.
+ *
+ * Delayed rather than immediate so it lands *after* the last beat has been read.
+ * Firing on the same frame would compete with the line that just arrived.
+ */
+export const REST_SETTLE_MS = 500
+
 export const DEFAULT_BEAT_ENTER: BeatEnter = "fade"
 
 /**

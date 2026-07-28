@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useSidebar } from "@/components/ui/sidebar"
 import { useFlags } from "@/features/flags/useFlags"
+import { isSearchShortcut } from "./shortcut"
 import { navGroups } from "./nav-items"
 import type { NavGroup, NavItem } from "./nav-items"
 
@@ -59,15 +60,29 @@ export function useSidebarNav(): SidebarNav {
 
   /**
    * `⌘K` from anywhere jumps to search, opening the rail first if it's away.
+   * Pressing it again — while the caret is still in the field — puts the rail
+   * back, so the same key gets you in and out without reaching for the mouse.
+   *
+   * The "still focused" test rather than a plain toggle: if you've opened the
+   * rail and gone off to click something else, `⌘K` should bring you back to
+   * search, not dismiss the thing you were about to use.
    *
    * Bound on the window rather than the field, since the whole point is to reach
-   * it when it isn't on screen — and the focus is deferred a frame because a
-   * panel that's still sliding in can't take it yet.
+   * it when it isn't on screen — and focus is deferred a frame because a panel
+   * that's still sliding in can't take it yet.
    */
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "k" || !(event.metaKey || event.ctrlKey)) return
+      if (!isSearchShortcut(event)) return
       event.preventDefault()
+
+      if (document.activeElement === inputRef.current) {
+        inputRef.current?.blur()
+        if (isMobile) setOpenMobile(false)
+        else setOpen(false)
+        return
+      }
+
       if (isMobile) setOpenMobile(true)
       else setOpen(true)
       requestAnimationFrame(() => inputRef.current?.focus())

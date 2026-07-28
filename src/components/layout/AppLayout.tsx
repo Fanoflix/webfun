@@ -36,7 +36,7 @@ export function AppLayout() {
     // Widen the track so the p-12 float-margin still leaves a comfortable card.
     <SidebarProvider
       className="[&_[data-slot=sidebar-gap]]:w-0"
-      style={{ "--sidebar-width": "22rem" } as CSSProperties}
+      style={{ "--sidebar-width": "18rem" } as CSSProperties}
     >
       <AppSidebar />
       <SidebarInset>

@@ -29,6 +29,15 @@ export type TimelinePlayback = {
    * everything after it performed.
    */
   runId: number
+  /**
+   * Whether this run began from an empty message — i.e. a replay, which winds
+   * everything away first.
+   *
+   * The first beat needs it: arriving into empty space it should grow in like
+   * any other beat, but arriving over a poster of exactly its own height it
+   * must only fade, or the message collapses and re-expands for nothing.
+   */
+  fromCleared: boolean
   play: () => void
   /** Winds the beats back down, *then* runs again. */
   replay: () => void
@@ -55,6 +64,7 @@ export function useTimelinePlayback(
     initiallyDone ? beats.length : 1
   )
   const [runId, setRunId] = useState(0)
+  const [fromCleared, setFromCleared] = useState(false)
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
@@ -72,41 +82,47 @@ export function useTimelinePlayback(
   const handlers = useRef({ onBeatLand, onFinish })
   handlers.current = { onBeatLand, onFinish }
 
-  const start = useCallback(() => {
-    clearAll()
-    setVisibleCount(1)
-    setRunId((id) => id + 1)
-    setPhase("playing")
-    handlers.current.onBeatLand?.()
+  const start = useCallback(
+    (cleared: boolean) => {
+      clearAll()
+      setVisibleCount(1)
+      setRunId((id) => id + 1)
+      setFromCleared(cleared)
+      setPhase("playing")
+      handlers.current.onBeatLand?.()
 
-    if (beats.length <= 1) {
-      setPhase("done")
-      handlers.current.onFinish?.()
-      return
-    }
+      if (beats.length <= 1) {
+        setPhase("done")
+        handlers.current.onFinish?.()
+        return
+      }
 
-    /**
-     * Every beat is scheduled up front against one cumulative offset rather than
-     * chained one timeout at a time. Chaining accumulates each timer's lateness
-     * into the next, so a long message drifts further behind its own timings the
-     * further it gets.
-     */
-    let offset = 0
-    beats.slice(0, -1).forEach((beat, index) => {
-      offset += beat.hold
-      const isLast = index === beats.length - 2
-      timers.current.push(
-        setTimeout(() => {
-          setVisibleCount(index + 2)
-          handlers.current.onBeatLand?.()
-          if (isLast) {
-            setPhase("done")
-            handlers.current.onFinish?.()
-          }
-        }, offset)
-      )
-    })
-  }, [beats, clearAll])
+      /**
+       * Every beat is scheduled up front against one cumulative offset rather
+       * than chained one timeout at a time. Chaining accumulates each timer's
+       * lateness into the next, so a long message drifts further behind its own
+       * timings the further it gets.
+       */
+      let offset = 0
+      beats.slice(0, -1).forEach((beat, index) => {
+        offset += beat.hold
+        const isLast = index === beats.length - 2
+        timers.current.push(
+          setTimeout(() => {
+            setVisibleCount(index + 2)
+            handlers.current.onBeatLand?.()
+            if (isLast) {
+              setPhase("done")
+              handlers.current.onFinish?.()
+            }
+          }, offset)
+        )
+      })
+    },
+    [beats, clearAll]
+  )
+
+  const play = useCallback(() => start(false), [start])
 
   /**
    * Clears the message, waits, then runs it again.
@@ -121,8 +137,8 @@ export function useTimelinePlayback(
     clearAll()
     setPhase("rewinding")
     setVisibleCount(0)
-    timers.current.push(setTimeout(start, REPLAY_GAP_MS))
+    timers.current.push(setTimeout(() => start(true), REPLAY_GAP_MS))
   }, [clearAll, start])
 
-  return { phase, visibleCount, runId, play: start, replay }
+  return { phase, visibleCount, runId, fromCleared, play, replay }
 }

@@ -5,7 +5,7 @@ import { useCallback, useMemo, useRef } from "react"
 import { toBeats, totalDurationMs } from "../engine/beats"
 import type { Beat } from "../engine/beats"
 import { BEAT_ENTERS } from "../engine/beatEnters"
-import { BEAT_REWIND_MS, CHAT_EASE } from "../engine/defaults"
+import { BEAT_REWIND_MS, CHAT_EASE, REST_SETTLE_MS } from "../engine/defaults"
 import { formatCountdown } from "../engine/time"
 import type { Message } from "../engine/types"
 import { useTimelinePlayback } from "../engine/useTimelinePlayback"
@@ -39,14 +39,12 @@ export function TimelineMessage({
 
   const finish = useCallback(() => onFinish(message.id), [message.id, onFinish])
 
-  const { phase, visibleCount, runId, play, replay } = useTimelinePlayback(
-    beats,
-    {
+  const { phase, visibleCount, runId, fromCleared, play, replay } =
+    useTimelinePlayback(beats, {
       initiallyDone: message.played === true,
       onBeatLand,
       onFinish: finish,
-    }
-  )
+    })
 
   /**
    * Beats present at mount don't animate, for the same reason seeded messages
@@ -77,7 +75,11 @@ export function TimelineMessage({
       data-phase={phase}
       className="relative space-y-1"
     >
-      <Rail running={running} stopsAtReplay={phase === "done"} />
+      <Rail
+        running={running}
+        stopsAtReplay={phase === "done"}
+        pulseKey={phase === "done" ? runId : null}
+      />
 
       {/* The first beat is the poster and never leaves, so it sits outside
           `AnimatePresence` — inside, a run's re-key would mount the new copy
@@ -89,7 +91,10 @@ export function TimelineMessage({
           // rather than sitting inert while everything after it performs.
           key={`${runId}-${beats[0].id}`}
           beat={beats[0]}
-          isFirst
+          // Only skip the height when it's arriving over a poster of its own
+          // size. A replay wound the message away to nothing first, so there's
+          // no poster to match and it grows in like every other beat.
+          overPoster={!fromCleared}
           animates={runId > 0}
         />
       )}
@@ -100,7 +105,7 @@ export function TimelineMessage({
           <BeatView
             key={`${runId}-${beat.id}`}
             beat={beat}
-            isFirst={false}
+            overPoster={false}
             animates={runId > 0 || index + 1 >= mountedCount}
           />
         ))}
@@ -135,8 +140,11 @@ export function TimelineMessage({
 function Rail({
   running,
   stopsAtReplay,
+  pulseKey,
 }: {
   running: boolean
+  /** Non-null once the message has finished; changes per run so a replay re-fires. */
+  pulseKey: number | null
   /**
    * At rest the rail stops halfway down the replay row instead of running to
    * the bottom, so the hairline coming out of the control meets its end and the
@@ -156,7 +164,7 @@ function Rail({
           button below. */}
       <Play
         aria-hidden
-        className="absolute top-4 -left-9.5 size-2.5 fill-current text-border"
+        className="absolute top-4 -left-5.5 size-2.5 fill-current text-border"
       />
 
       <div
@@ -182,8 +190,38 @@ function Rail({
             }}
           />
         )}
+        {pulseKey !== null && <Pulse key={pulseKey} />}
       </div>
     </>
+  )
+}
+
+/**
+ * A single flash of full-contrast colour over whatever it's laid on.
+ *
+ * The message's full stop: when it finishes, the rail and the hairline reaching
+ * the replay control both light up once and settle back. Mounted fresh per run
+ * so a replay fires it again, and drawn as an overlay rather than by animating
+ * the colour itself — `bg-foreground` is already the right value in both
+ * themes, where a hardcoded white or black would only work in one.
+ */
+function Pulse() {
+  const reduced = useReducedMotion()
+  if (reduced) return null
+
+  return (
+    <motion.span
+      aria-hidden
+      className="absolute inset-0 bg-foreground"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1, 0] }}
+      transition={{
+        duration: 2,
+        times: [0, 0.5, 1],
+        delay: REST_SETTLE_MS / 1_000,
+        ease: CHAT_EASE,
+      }}
+    />
   )
 }
 
@@ -195,22 +233,22 @@ function Rail({
  * The beat's `enter` rides on top of that, with its own duration: making room and
  * appearing are two different things and want different timing.
  *
- * The **first** beat is the exception, and only fades. It's replacing the poster,
- * which already occupies exactly its height, so animating height there would
+ * A beat landing **over the poster** is the exception, and only fades. It's
+ * replacing something of exactly its own height, so animating height there would
  * collapse the message and re-expand it for no reason — a flinch at the very
  * moment the performance is meant to begin.
  */
 function BeatView({
   beat,
-  isFirst,
+  overPoster,
   animates,
 }: {
   beat: Beat
-  isFirst: boolean
+  overPoster: boolean
   animates: boolean
 }) {
   const enter = BEAT_ENTERS[beat.enter]
-  const sizes = !isFirst
+  const sizes = !overPoster
 
   return (
     <motion.div
@@ -313,9 +351,17 @@ function ReplayButton({ onReplay }: { onReplay: () => void }) {
         transition={
           reduced
             ? { duration: 0 }
-            : { duration: 0.2, delay: 0.5, ease: CHAT_EASE }
+            : {
+                duration: 0.2,
+                delay: REST_SETTLE_MS / 1_000,
+                ease: CHAT_EASE,
+              }
         }
-      />
+      >
+        {/* Flashes in step with the rail: the elbow completes and the whole
+            mark acknowledges it at once. */}
+        <Pulse />
+      </motion.span>
       <button
         type="button"
         onClick={onReplay}

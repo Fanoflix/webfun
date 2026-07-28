@@ -50,7 +50,7 @@ export function AppSidebar() {
             aria-label="Search tools"
             className="pr-12 pl-8 text-xs placeholder:text-xs"
           />
-          <SearchHint className="absolute top-1/2 right-2 -translate-y-1/2" />
+          <SearchHint className="absolute top-1/2 right-2 -translate-y-1/2 border-transparent" />
         </div>
       </SidebarHeader>
 
@@ -85,7 +85,7 @@ export function AppSidebar() {
                           render={<Link to={item.to} />}
                           className="h-auto px-2 py-1 text-xs hover:bg-transparent hover:text-sidebar-foreground active:bg-transparent data-active:bg-transparent data-active:text-sidebar-foreground data-active:shadow-none"
                         >
-                          <item.icon className="active:opacity-100" />
+                          <item.icon className="opacity-35 transition-opacity duration-150 group-data-active/menu-button:opacity-100" />
                           <span>{item.title}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
