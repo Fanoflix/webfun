@@ -72,6 +72,32 @@ describe("TimelineMessage", () => {
     expect(replay.className).not.toMatch(/opacity-0/)
   })
 
+  it("runs an indeterminate bar only while beats are landing", () => {
+    renderMessage()
+    const bar = () => document.querySelector('[data-slot="playing-bar"]')
+
+    expect(bar()).toBeNull()
+
+    fireEvent.click(screen.getByRole("button", { name: "Play message" }))
+    expect(bar()).not.toBeNull()
+
+    act(() => void vi.advanceTimersByTime(5_000))
+    expect(bar()).toBeNull()
+  })
+
+  it("marks itself as playable for as long as it exists", () => {
+    // Idle, playing and rested all keep the gutter rail — a played message
+    // should stay visibly different from the plain text around it.
+    renderMessage()
+    const rail = () => document.querySelector('[data-slot="timeline-message"]')
+
+    expect(rail()).not.toBeNull()
+    fireEvent.click(screen.getByRole("button", { name: "Play message" }))
+    expect(rail()).not.toBeNull()
+    act(() => void vi.advanceTimersByTime(5_000))
+    expect(rail()).not.toBeNull()
+  })
+
   it("does not autoplay — nothing moves until it's pressed", () => {
     renderMessage()
 

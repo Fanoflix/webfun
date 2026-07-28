@@ -67,7 +67,21 @@ export function TimelineMessage({
   }
 
   return (
-    <div className="space-y-1">
+    /**
+     * The rail in the gutter is what says "this one performs itself" at a
+     * glance — present from the moment it arrives, through the play, and after
+     * it rests, so a played message stays visibly different from the plain text
+     * around it rather than becoming indistinguishable the moment it finishes.
+     *
+     * Drawn as a pseudo-element in the space that's already empty to the left of
+     * the text, so marking a message costs no layout and shifts nothing.
+     */
+    <div
+      data-slot="timeline-message"
+      className={`relative space-y-1 before:absolute before:inset-y-0 before:-left-3 before:w-px before:transition-colors before:duration-200 ${
+        phase === "playing" ? "before:bg-foreground/50" : "before:bg-border"
+      }`}
+    >
       {beats.slice(0, visibleCount).map((beat, index) => (
         <BeatView key={beat.id} beat={beat} animates={index >= mountedCount} />
       ))}
@@ -75,7 +89,38 @@ export function TimelineMessage({
       {phase === "idle" && (
         <PlayButton durationMs={totalDurationMs(beats)} onPlay={play} />
       )}
+      {phase === "playing" && <PlayingBar />}
       {phase === "done" && <ReplayButton onReplay={replay} />}
+    </div>
+  )
+}
+
+/**
+ * An indeterminate bar while beats are landing — deliberately *not* a progress
+ * bar. Progress invites you to watch the bar and predict the end; this only says
+ * "something is still coming", which is the anticipation the whole idea trades
+ * on. It also sits in the slot the play button just vacated, so the message
+ * doesn't reflow when you press it.
+ *
+ * The one animation in this module that isn't expo out: a ping-pong wants to
+ * ease at both ends, and expo out would slam into each turn.
+ */
+function PlayingBar() {
+  return (
+    <div
+      data-slot="playing-bar"
+      className="mt-1.5 h-px w-13 overflow-hidden bg-border"
+    >
+      <motion.div
+        className="h-full w-1/3 bg-foreground/70"
+        animate={{ x: ["0%", "200%"] }}
+        transition={{
+          duration: 0.9,
+          ease: "easeInOut",
+          repeat: Infinity,
+          repeatType: "reverse",
+        }}
+      />
     </div>
   )
 }

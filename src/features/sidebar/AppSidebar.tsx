@@ -59,12 +59,15 @@ export function AppSidebar() {
             onOpenChange={(open) => toggle(group.label, open)}
           >
             <SidebarGroup className="w-auto gap-0.5 p-0">
-              {/* Underline is the only hover state in the rail. Nothing here
-                  carries a background — not the category, not a row, not the
-                  active one — so the tools read as a list rather than a stack
-                  of chips, and the eye has one thing to follow instead of
-                  three competing tints. */}
-              <CollapsibleTrigger className="group/trigger flex w-full items-center px-2 py-1 text-xs font-semibold tracking-wider text-sidebar-foreground/35 uppercase transition-colors hover:text-sidebar-foreground hover:underline">
+              {/* Nothing in the rail carries a background — not the category,
+                  not a row, not the active one — so the tools read as a list
+                  rather than a stack of chips, and the eye has one thing to
+                  follow instead of three competing tints.
+
+                  The category doesn't light up on hover at all: the cursor
+                  already says it's pressable, and a heading that reacts
+                  competes with the row you're actually reaching for. */}
+              <CollapsibleTrigger className="group/trigger flex w-full cursor-pointer items-center px-2 py-1 text-xs font-semibold tracking-wider text-sidebar-foreground/35 uppercase">
                 {group.label}
                 <Plus className="ml-auto size-3.5 transition-transform duration-200 group-data-[panel-open]/trigger:rotate-45" />
               </CollapsibleTrigger>
@@ -77,7 +80,7 @@ export function AppSidebar() {
                           isActive={pathname === item.to}
                           tooltip={item.title}
                           render={<Link to={item.to} />}
-                          className="h-auto px-2 py-1 text-xs hover:bg-transparent hover:text-sidebar-foreground hover:underline active:bg-transparent data-active:bg-transparent data-active:text-sidebar-foreground data-active:shadow-none"
+                          className="h-auto px-2 py-1 text-xs hover:bg-transparent hover:text-sidebar-foreground active:bg-transparent data-active:bg-transparent data-active:text-sidebar-foreground data-active:shadow-none"
                         >
                           <item.icon />
                           <span>{item.title}</span>
@@ -103,7 +106,7 @@ export function AppSidebar() {
           href={SITE_URL}
           target="_blank"
           rel="noreferrer"
-          className="px-1 text-xs text-muted-foreground transition-colors hover:text-sidebar-foreground hover:underline"
+          className="px-1 text-xs text-muted-foreground transition-colors hover:text-sidebar-foreground"
         >
           ammarnasir.com
         </a>
@@ -112,7 +115,7 @@ export function AppSidebar() {
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            className="flex flex-1 items-center justify-center gap-1.5 border border-sidebar-border px-2.5 py-1.5 text-xs whitespace-nowrap text-sidebar-foreground transition-colors hover:underline"
+            className="flex flex-1 items-center justify-center gap-1.5 border border-sidebar-border px-2.5 py-1.5 text-xs whitespace-nowrap text-muted-foreground transition-colors hover:text-sidebar-foreground"
           >
             <Star className="size-3.5" />
             star // contribute
