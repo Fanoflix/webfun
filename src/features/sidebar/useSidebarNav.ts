@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useSidebar } from "@/components/ui/sidebar"
 import { useFlags } from "@/features/flags/useFlags"
-import { isSearchShortcut } from "./shortcut"
+import { bindShortcutRelease, isSearchShortcut } from "./shortcut"
 import { navGroups } from "./nav-items"
 import type { NavGroup, NavItem } from "./nav-items"
 
@@ -72,10 +72,7 @@ export function useSidebarNav(): SidebarNav {
    * that's still sliding in can't take it yet.
    */
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!isSearchShortcut(event)) return
-      event.preventDefault()
-
+    return bindShortcutRelease(isSearchShortcut, () => {
       if (document.activeElement === inputRef.current) {
         inputRef.current?.blur()
         if (isMobile) setOpenMobile(false)
@@ -86,9 +83,7 @@ export function useSidebarNav(): SidebarNav {
       if (isMobile) setOpenMobile(true)
       else setOpen(true)
       requestAnimationFrame(() => inputRef.current?.focus())
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
+    })
   }, [isMobile, setOpen, setOpenMobile])
 
   useEffect(() => {

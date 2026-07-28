@@ -22,6 +22,7 @@ import {
 import { ThemeToggle } from "@/features/theme/ThemeToggle"
 import { GithubMark } from "./GithubMark"
 import { SearchHint } from "./SearchHint"
+import { WebfunMark } from "./WebfunMark"
 import { useSidebarNav } from "./useSidebarNav"
 
 const REPO_URL = "https://github.com/Fanoflix/webfun"
@@ -33,12 +34,31 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="floating" className="p-4">
+      {/* The toggle hangs off the outside of the card rather than sitting in the
+          header, so the rail's own chrome is nothing but the site and its tools.
+
+          The zero-height `relative` anchor is what makes that possible. An
+          absolutely positioned child of the card would otherwise resolve
+          against the fixed container, whose `p-4` puts its edge an inch away
+          from the card's; this pins to the card itself, then pushes the toggle
+          its own width plus the gap clear of it. */}
+      <div className="relative">
+        {/* Faded out when the rail is away. It's translated clear of the card,
+            so the panel sliding off-screen doesn't take it with it — it would
+            otherwise be left stranded against the left edge, a toggle with
+            nothing attached to it. Matches the panel's own transition so the
+            two leave together. */}
+        <div className="absolute top-0 right-0 translate-x-[calc(100%+0.5rem)] transition-opacity duration-100 ease-linear group-data-[state=collapsed]:pointer-events-none group-data-[state=collapsed]:opacity-0">
+          <SidebarTrigger />
+        </div>
+      </div>
+
       <SidebarHeader className="gap-0.5 px-4">
         <div className="flex items-center justify-between">
-          <div className="px-1 py-1 text-xs font-semibold tracking-widest uppercase">
+          <div className="flex items-center gap-2 px-1 py-1 pb-5 text-xs font-semibold tracking-widest uppercase">
+            <WebfunMark className="size-4 shrink-0" />
             webfun
           </div>
-          <SidebarTrigger />
         </div>
         <div className="group relative">
           <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -50,7 +70,10 @@ export function AppSidebar() {
             aria-label="Search tools"
             className="pr-12 pl-8 text-xs placeholder:text-xs"
           />
-          <SearchHint className="absolute top-1/2 right-2 -translate-y-1/2 border-transparent" />
+          <SearchHint
+            held
+            className="absolute top-1.5 right-1.5 border-transparent text-muted-foreground"
+          />
         </div>
       </SidebarHeader>
 

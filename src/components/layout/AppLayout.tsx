@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar"
 import { ToolGate } from "@/features/flags/ToolGate"
 import { AppSidebar } from "@/features/sidebar/AppSidebar"
-import { SearchHint } from "@/features/sidebar/SearchHint"
+import { WebfunMark } from "@/features/sidebar/WebfunMark"
 
 /**
  * The toggle lives *inside* the sidebar while it's open; this one shows in the
@@ -22,9 +22,12 @@ function InsetSidebarTrigger() {
   return (
     // The shortcut hint rides along here because this is exactly when it's worth
     // knowing: the search field it jumps to isn't on screen to advertise itself.
-    <div className="group flex items-center gap-2">
+    <div className="group flex items-center gap-4">
       <SidebarTrigger />
-      <SearchHint />
+
+      {/* With the rail away this is the only thing still identifying the site,
+          so it sits at the end of the row rather than disappearing with it. */}
+      <WebfunMark className="size-4 shrink-0 text-muted-foreground" />
     </div>
   )
 }

@@ -24,7 +24,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { PanelLeftIcon } from "lucide-react"
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react"
+import { SearchHint } from "@/features/sidebar/SearchHint"
+import { isRailShortcut } from "@/features/sidebar/shortcut"
+import { HELD_CLASS, useShortcutHold } from "@/features/sidebar/useShortcutHold"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -94,20 +97,44 @@ function SidebarProvider({
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
   }, [isMobile, setOpen, setOpenMobile])
 
-  // Adds a keyboard shortcut to toggle the sidebar.
+  /**
+   * Keyboard shortcut to toggle the sidebar.
+   *
+   * Local change from the upstream component: it fires on **release**, not on
+   * press, matching the app's other shortcut. The trigger flinches when this
+   * runs, and a toggle that happened on keydown while its acknowledgement
+   * happened on keyup read as two unrelated events.
+   *
+   * `armed` rather than simply matching on keyup: a keyup only carries the
+   * modifier if the letter is released first, so letting go of ⌘ first would
+   * silently miss. The keydown is still needed to `preventDefault` — the
+   * browser claims this combination, and by keyup it has already acted.
+   */
   React.useEffect(() => {
+    let armed = false
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
         event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
         (event.metaKey || event.ctrlKey)
       ) {
         event.preventDefault()
-        toggleSidebar()
+        armed = true
       }
     }
 
+    const handleKeyUp = () => {
+      if (!armed) return
+      armed = false
+      toggleSidebar()
+    }
+
     window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
   }, [toggleSidebar])
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
@@ -259,22 +286,42 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, state } = useSidebar()
+
+  /**
+   * Held down for exactly as long as the shortcut is, springing back on release
+   * — which is when the rail actually moves. Same contract as pressing the
+   * button with a mouse.
+   *
+   * The look lives in `HELD_CLASS`, shared with the `⌘K` badge in the search
+   * field so the two can't drift apart.
+   */
+  const held = useShortcutHold<HTMLButtonElement>(isRailShortcut)
 
   return (
     <Button
+      ref={held}
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="icon-sm"
-      className={cn(className)}
+      size="xs"
+      className={cn(
+        "w-max border border-border px-0 py-0 pl-2",
+        HELD_CLASS,
+        className
+      )}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      {state === "collapsed" ? (
+        <ArrowRightIcon className="size-3.5" />
+      ) : (
+        <ArrowLeftIcon className="size-3.5" />
+      )}
+      <SearchHint className="border-transparent p-0 px-0 py-0" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
