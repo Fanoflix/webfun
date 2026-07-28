@@ -7,7 +7,7 @@ import {
   REPLAY_TYPING_MS,
   replayTypingFor,
 } from "./defaults"
-import { SEED_LINES } from "./seed"
+import { SEED_BODIES } from "./seed"
 
 describe("replayTypingFor", () => {
   it("gives the opener the long pause", () => {
@@ -27,10 +27,10 @@ describe("replayTypingFor", () => {
     expect(replayTypingFor(10)).toBe(REPLAY_TYPING_MS)
   })
 
-  it("covers the seed with a burst and at least one line after it", () => {
-    // The shape only reads as "quick burst, then back" if the script is long
-    // enough to have an "after". Adding or cutting seed lines can break that
-    // silently, so it's asserted rather than assumed.
-    expect(SEED_LINES.length).toBeGreaterThan(REPLAY_BURST_COUNT + 1)
+  it("only has the opener to pace, now the seed is one message", () => {
+    // The burst curve is kept for a seed that grows back into several messages,
+    // but today the reset types once and drops one timeline message — so this
+    // asserts what's actually exercised rather than a shape that isn't.
+    expect(SEED_BODIES).toHaveLength(1)
   })
 })

@@ -9,8 +9,8 @@ import {
   replayTypingFor,
 } from "./defaults"
 import { CHATTER_REACTIONS } from "./emoji"
-import { REPLY_POOL, SEED_LINES } from "./seed"
-import type { AuthorId, Segment } from "./types"
+import { REPLY_POOL, SEED_BODIES } from "./seed"
+import type { AuthorId, Message, Segment } from "./types"
 
 /**
  * The scripted counterpart.
@@ -23,12 +23,16 @@ import type { AuthorId, Segment } from "./types"
  * too: after a reset it types the opening conversation out live, one line at a
  * time. Same machinery, and only one place that has to be cleaned up.
  *
- * **Effect 3 of 3.** Justified: timers are the entire feature, and the cleanup is
+ * **Effect 3 of 5.** Justified: timers are the entire feature, and the cleanup is
  * what lets a mid-flight reply survive an unmount without warning.
  */
 
 type Params = {
-  append: (authorId: AuthorId, body: Segment[]) => string
+  append: (
+    authorId: AuthorId,
+    body: Segment[],
+    mode?: Message["mode"]
+  ) => string
   toggleReaction: (messageId: string, emoji: string, authorId: AuthorId) => void
 }
 
@@ -104,7 +108,7 @@ export function useFakeChatter({ append, toggleReaction }: Params): FakeChatter 
     setIsTyping(false)
 
     let elapsed = 0
-    SEED_LINES.forEach((text, index) => {
+    SEED_BODIES.forEach(({ body, mode }, index) => {
       const typingFor = replayTypingFor(index)
 
       // The first one starts typing *now*, not on the next tick — otherwise the
@@ -118,7 +122,7 @@ export function useFakeChatter({ append, toggleReaction }: Params): FakeChatter 
 
       schedule(() => {
         setIsTyping(false)
-        append(CHATTER_ID, [{ kind: "text", text }])
+        append(CHATTER_ID, body, mode)
       }, elapsed)
       elapsed += REPLAY_BEAT_MS
     })

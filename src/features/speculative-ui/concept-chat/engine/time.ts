@@ -71,3 +71,14 @@ export function formatCountdown(remainingMs: number): string {
   const seconds = total % 60
   return `${minutes}:${String(seconds).padStart(2, "0")}`
 }
+
+/**
+ * `0.8s` / `1.5s` / `3s` — a beat's hold, shown beside its label.
+ *
+ * The label is what someone picks; this is what they're actually picking, printed
+ * next to it so the friendly name never hides the real number.
+ */
+export function formatHold(ms: number): string {
+  const seconds = ms / 1_000
+  return `${Number.isInteger(seconds) ? seconds : seconds.toFixed(1)}s`
+}

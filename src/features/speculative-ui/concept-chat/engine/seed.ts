@@ -1,6 +1,13 @@
-import { CHATTER_ID } from "./defaults"
+import { CHATTER_ID, DEFAULT_BEAT_ENTER } from "./defaults"
 import { MINUTE_MS } from "./time"
-import type { Message } from "./types"
+import type { Message, Segment } from "./types"
+
+/** Sugar for the seed's timed segments, which are otherwise mostly punctuation. */
+const beat = (text: string, hold: number): Segment => ({
+  kind: "text",
+  text,
+  timing: { hold, enter: DEFAULT_BEAT_ENTER },
+})
 
 /**
  * The thread a first-time visitor lands in, and the canned pool the fake chatter
@@ -12,38 +19,68 @@ import type { Message } from "./types"
  * so it does age naturally from there — which is correct.
  */
 
-/** Minutes before "now" that each seeded line was sent. */
-const SCRIPT: readonly { text: string; minutesAgo: number }[] = [
-  { text: "ok hear me out", minutesAgo: 6 },
+/**
+ * The opening conversation: **one message, three beats.**
+ *
+ * It used to be five messages of someone rattling on, which is the shape a chat
+ * app forces on a single thought. Collapsing it into one timeline message is the
+ * argument being made in the form it's being made about — the visitor's first
+ * impression is a thought that arrived whole and unfolds at the pace it was
+ * meant to be read at, rather than a wall of text explaining that it could.
+ *
+ * Beats hold more than one line each. Untimed segments join the beat above, so a
+ * pair of lines lands together and then the thread waits.
+ *
+ * `minutesAgo` is how long before "now" it was sent.
+ */
+const SCRIPT: readonly {
+  body: Segment[]
+  minutesAgo: number
+  mode?: Message["mode"]
+}[] = [
   {
-    text: "...you know when someone sends a joke and the timing is the entire joke",
-    minutesAgo: 6,
-  },
-  {
-    text: "and the only way to land it is to go record a video of yourself typing it....... ",
-    minutesAgo: 5,
-  },
-  { text: "which is insane. it's a text message", minutesAgo: 5 },
-  {
-    text: "now imagine this... what if the message just knew how it was supposed to be read",
+    mode: "timeline",
     minutesAgo: 4,
+    body: [
+      beat("ok hear me out", 2_000),
+      { kind: "text", text: "...I think messages are broken" },
+
+      beat(
+        "...you know when someone sends a joke and the timing is the entire joke",
+        2_600
+      ),
+      {
+        kind: "text",
+        text: "and the only way to land it is to go record a video of yourself typing it....... ",
+      },
+
+      beat("which is insane. it's a text message", 1_000),
+      {
+        kind: "text",
+        text: "now imagine this... what if the message just knew how it was supposed to be read",
+      },
+    ],
   },
 ]
 
 /**
- * The seed as plain lines, for replaying it live after a reset — where the
- * messages arrive one at a time with the counterpart typing between them, rather
- * than appearing pre-written.
+ * The seed as bodies, for replaying it live after a reset — where the messages
+ * arrive one at a time with the counterpart typing between them, rather than
+ * appearing pre-written.
  */
-export const SEED_LINES: readonly string[] = SCRIPT.map((line) => line.text)
+export const SEED_BODIES: readonly {
+  body: Segment[]
+  mode?: Message["mode"]
+}[] = SCRIPT.map(({ body, mode }) => ({ body, mode }))
 
 export function createSeedThread(now: number): Message[] {
   return SCRIPT.map((line, i) => ({
     id: `seed-${i}`,
     authorId: CHATTER_ID,
     sentAt: now - line.minutesAgo * MINUTE_MS,
-    body: [{ kind: "text", text: line.text }],
+    body: line.body,
     reactions: [],
+    ...(line.mode === undefined ? {} : { mode: line.mode }),
   }))
 }
 

@@ -8,7 +8,7 @@ import { useCallback, useLayoutEffect, useRef } from "react"
  * read history, a new message must not yank them back down. So "was I at the
  * bottom before this render?" is recorded on scroll, and acted on after layout.
  *
- * **Effect 2 of 3.** Justified: it has to run after the DOM has the new content
+ * **Effect 2 of 5.** Justified: it has to run after the DOM has the new content
  * but before the browser paints, or the jump is visible.
  */
 

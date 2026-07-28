@@ -1,5 +1,6 @@
 import { GIFS, IMAGES } from "./assets"
-import type { Message, Reaction, Segment } from "./types"
+import { BEAT_ENTERS } from "./beatEnters"
+import type { Message, Reaction, Segment, Timing } from "./types"
 
 /**
  * Persistence for the thread.
@@ -106,12 +107,29 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 /**
+ * An enter style is checked against the live registry for the same reason media
+ * ids are checked against the manifests: a name that no longer resolves would
+ * otherwise reach the renderer as an animation that doesn't exist.
+ */
+function isTiming(value: unknown): value is Timing {
+  return (
+    isRecord(value) &&
+    typeof value.hold === "number" &&
+    Number.isFinite(value.hold) &&
+    value.hold >= 0 &&
+    typeof value.enter === "string" &&
+    Object.hasOwn(BEAT_ENTERS, value.enter)
+  )
+}
+
+/**
  * Media ids are checked against the live manifests, not just for being strings.
  * A message referencing an asset that has since been renamed or removed would
  * otherwise render a broken image forever, with no way back except a reset.
  */
 function isSegment(value: unknown): value is Segment {
   if (!isRecord(value)) return false
+  if (value.timing !== undefined && !isTiming(value.timing)) return false
   switch (value.kind) {
     case "text":
       return typeof value.text === "string"
@@ -144,7 +162,11 @@ function isMessage(value: unknown): value is Message {
     Array.isArray(value.body) &&
     value.body.every(isSegment) &&
     Array.isArray(value.reactions) &&
-    value.reactions.every(isReaction)
+    value.reactions.every(isReaction) &&
+    (value.mode === undefined ||
+      value.mode === "static" ||
+      value.mode === "timeline") &&
+    (value.played === undefined || typeof value.played === "boolean")
   )
 }
 

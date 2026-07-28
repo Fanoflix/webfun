@@ -32,10 +32,10 @@ type Segment =
   | { kind: "gif";   assetId: AssetId }
 ```
 
-v0 renders every segment at once. v1 attaches timing (`at`, `hold`, `exit`) to each
-segment and adds `mode: "static" | "timeline"` to the message. **Same segment types,
-same renderer** — the timeline version walks a clock instead of emitting everything
-immediately.
+v0 renders every segment at once. v1 attaches `timing` to segments and adds
+`mode: "static" | "timeline"` to the message. **Same segment types, same renderer** —
+the timeline version walks a clock instead of emitting everything immediately. See
+[v1 — timeline messages](#v1--timeline-messages).
 
 The trap being avoided: storing `content: string` + `attachments[]` the way real chat
 apps do, then needing a second parallel representation for timed messages.
@@ -212,11 +212,197 @@ Three decisions that keep the module clean, made up front:
   wrapper in `useChat` that updates state and saves. No save-on-change effect.
 - **Relative timestamps use one shared ticker.** A single interval at the list level
   publishes "now"; each row derives its label. Not a timer per message.
-- **Effects are budgeted at three, all justified:** the shared ticker, the fake
-  chatter's timers, and one layout effect for stick-to-bottom scroll. Nothing else.
+- **Effects are budgeted and each one is justified:** the shared ticker, the fake
+  chatter's timers, one layout effect for stick-to-bottom scroll, the expiry timer,
+  and — in v1 — unmount cleanup on a *playing* timeline message. Nothing else. Five
+  total, and the numbering in the source is kept honest.
 
 Stick-to-bottom: track "is near bottom" on scroll, and in a layout effect pin to the
 bottom only when that holds — so a new message never yanks someone reading history.
+
+---
+
+# v1 — timeline messages
+
+The half the whole v0 model was shaped for. **Beats, not a timeline.**
+
+## The mental model
+
+A timeline message is a **sequence of beats** played top to bottom. A beat appears,
+holds, then the next one lands **on a new line beneath it** — nothing is replaced,
+nothing disappears. When it finishes, the whole message is sitting there in full,
+readable like any other message.
+
+This is deliberately *not* a video editor. No ruler, no absolute timestamps, no
+draggable clips, no overlapping lanes. The author never sees a millisecond.
+
+Two things fall out of accumulating rather than replacing:
+
+- **Nothing can overlap**, so there are no layers to reason about. Arrival order is
+  the entire model.
+- **The performance is the thread growing** — which is animation #1, already built
+  and already approved.
+
+## Data model — additive, no migration
+
+`hold` on a segment means *"this segment starts a new beat, and waits this long
+before the next beat lands."* A segment **without** timing joins the beat before it —
+which is precisely v0's "show immediately and keep showing".
+
+```ts
+type BeatEnter = keyof typeof BEAT_ENTERS      // "fade" today
+
+type Timing = { hold: number; enter: BeatEnter }
+
+type Segment =
+  | { kind: "text";  text: string;     timing?: Timing }
+  | { kind: "image"; assetId: ImageId; timing?: Timing }
+  | { kind: "gif";   assetId: GifId;   timing?: Timing }
+
+type Message = {
+  …
+  mode?: "static" | "timeline"   // absent ⇒ static
+  played?: boolean
+}
+```
+
+Consequences, all of them the point:
+
+- A **static message has no timing on any segment** → one beat → renders all at once.
+  Every v0 message already in localStorage stays valid and renders identically.
+  **No schema bump, no wipe.**
+- A beat can hold **text and media together** — text segment carries the timing, the
+  gif after it doesn't.
+- **Beats are derived, never stored.** `toBeats(body): Beat[]` is a pure projection in
+  the engine, unit-tested, same shape as `grouping.ts`. The view never groups.
+- The **last beat's `hold` is ignored** — nothing follows it. The composer doesn't
+  offer one.
+- **`played` is persisted on the message.** A message watched to the end comes back
+  finished after a reload rather than demanding to be watched again — and because it
+  lives on the thread, resetting the demo clears it with everything else. Mid-play
+  position is *not* stored: a reload lands you either at the poster or at the end,
+  never halfway.
+
+`BEAT_ENTERS` is a **registry** of motion variants keyed by id (the `manifestIds`
+trick from `assets.ts` gives the union for free). v1 ships `fade` only; adding
+`slide` or `scale` later is one entry and touches no renderer.
+
+## Composing — the composer expands
+
+The regular composer *becomes* the timeline composer. A toggle in the bar (beside
+`+`) grows it upward over the thread — same bar, more of it. Not a modal, not a
+route, and the sidebar stays.
+
+```
+┌────────────────────────────────────────────────────────┐
+│ TIMELINE  beat 2 of 4 · 0:06     ‹ › 🗑  ▶ Preview  ✕   │
+├────────────────────────────────────────────────────────┤
+│  ┌────┐ ┌────┐ ┌────┐ ┌────┐  ┌───┐                    │
+│  │1 ok│ │2 so│ │3 🎞│ │4 …│  │ + │                     │  ← filmstrip
+│  ├────┤ ├────┤ ├────┤ ├────┤  └───┘                    │
+│  │N 1.5s│Q 0.8s│L  3s│ end │                           │
+│  └────┘ └────┘ └────┘ └────┘                           │
+├────────────────────────────────────────────────────────┤
+│  [+] [▶] Beat 2 — Enter for the next     [emoji] [send]│  ← the existing bar
+└────────────────────────────────────────────────────────┘
+```
+
+**There is only one editor.** The selected beat *is* the composer bar's draft — its
+text, its attachments, its emoji picker, its `+`. Beats are stored beside it and
+selecting one swaps it in. That's what makes text-plus-media beats free and keeps
+the composer's behaviour from being written twice. There is no second text box and
+no separate stage; the bar you already type into is the stage.
+
+The swap is an **explicit action, never a synchronising effect**: anything that
+changes the selection first writes the live draft back into the beat it's leaving,
+then loads the one it's arriving at.
+
+- **Enter starts the next beat** rather than sending. It's the same gesture someone
+  already makes hammering a thought out across three messages, and it's the thing
+  that keeps this from feeling like editing software. Sending is the send button,
+  which timeline mode shows on every screen size.
+- **Filmstrip** — one evenly-sized card per beat. Evenly sized on purpose: it reads
+  as a *sequence*, not a duration ruler. Widths that encode duration would make this
+  the video timeline the whole idea exists to avoid. Scrolls horizontally; **no cap
+  on beats**.
+- **Hold** is a chip on each card that cycles the presets, showing the label *and*
+  the real number — `Normal 1.5s`. Presets live in `defaults.ts` as an array and
+  `hold` is a plain number, so a custom-duration input later needs nothing from the
+  model. The **last card shows `end`** and is disabled: nothing follows it.
+- **Reorder and delete live in the header**, acting on the selection, rather than as
+  six controls on every card. Selection follows the beat when it moves, not the slot.
+- **`▶ Preview`** renders the draft through the *real* `TimelineMessage` — play
+  button and all — so what's checked is exactly what arrives. Keyed, so each press
+  starts over.
+- Deleting the last beat leaves timeline mode. So does `✕`, which keeps the selected
+  beat as the plain draft — the composer collapsing to one beat is the plain
+  composer.
+
+## In the thread
+
+```
+   received                     playing                    rested
+┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
+│ ok so hear me out    │   │ ok so hear me out    │   │ ok so hear me out    │
+│                      │   │                      │   │                      │
+│      ▶  0:08         │   │ [gif]                │   │ [gif]                │
+└──────────────────────┘   └──────────────────────┘   │                      │
+                                   ↓ grows            │ record a video? insane│
+                                                      └──────────────────────┘
+                                                              ↺ replay (hover)
+```
+
+- **Poster** = beat 1, already rendered, with `▶ this message is playable` and the
+  run time beneath it. Beat 1 being visible means pressing play *continues* rather
+  than restarting — no flash, no jump. It says what it is in words because a play
+  button on a *message* is the one thing here nobody has seen before, and a visitor
+  who doesn't press it never finds out what any of this was for.
+- **Hovering a message tints the row**, full width of the thread. In a run of
+  messages from one author there are no dividers and no repeated avatar, so this is
+  the only thing that says where one message ends and the next begins.
+- **Click-only.** Nothing autoplays. Opting in is the anticipation.
+- **Playing** = each beat lands on its own line, pushing the message (and the thread)
+  down. Animation #1, unchanged, plus the beat's `enter`.
+- **Rested** = the entire message visible, start to finish, forever. `↺ Replay` sits
+  under it, always visible — a performance you can't obviously watch again is one
+  you only half-watched the first time. Replay clears back to the poster and runs.
+- **Reactions** attach to the message as a whole, below the card. Unchanged.
+
+## Playback
+
+`useTimelinePlayback(beats)` → `{ visibleCount, phase, play, replay }`. A chain of
+timeouts over an owned `timers` ref with one `clearAll` — the same discipline as
+`useFakeChatter`, and the same shape to test. An idle message runs no timers.
+
+- **Effect budget goes 4 → 5.** The fifth is unmount cleanup on a *playing* message
+  only, and it exists for the same reason the chatter's does: timers must not outlive
+  the component.
+- **Scroll**: a landing beat isn't a message change, so `useStickToBottom` won't see
+  it. Playback publishes a beat-landed tick that joins the deps — otherwise a message
+  performs itself off the bottom of the screen.
+- **Reduced motion**: a timeline message renders as the plain static stack — i.e.
+  exactly the v0 renderer, fully readable, just not performed. Same fallback for SSR.
+
+## The seed *is* the demo
+
+**One message, three beats.** The seed used to be five messages of someone rattling
+on — which is the shape a chat app forces on a single thought — plus a sixth that
+demonstrated the idea. Both collapse into one timeline message carrying the same
+words.
+
+That makes the first impression the argument itself, in the form it's arguing for: a
+thought that arrived whole and unfolds at the pace it was meant to be read at,
+rather than a wall of text explaining that it could. Beats hold two lines each,
+since untimed segments join the beat above.
+
+A consequence worth knowing: the reset replay now types once and drops one message.
+The burst pacing table (`replayTypingFor`) is kept for a seed that grows back into
+several messages, but only its opener branch runs today.
+
+## Deferred from v1
+
+Custom hold input · additional `BEAT_ENTERS` (slide, scale) · per-beat exit
+transitions · scrubbing · editing a sent timeline message.
 
 ---
 
@@ -254,6 +440,25 @@ bottom only when that holds — so a new message never yanks someone reading his
 **6 — Motion & polish** ✅
 - [x] Animations 1–4, reduced-motion fallbacks
 - [ ] `how-it-works.md` (project convention)
+
+**7 — v1 timeline messages** ✅ *done — 34 new tests, 123 total*
+- [x] `types.ts` — `Timing`, `mode`, `played`; `beatEnters.ts` registry
+- [x] `beats.ts` — pure `toBeats` / `flatten` / `totalDurationMs`, round-trip tested
+- [x] `storage.ts` — validates `timing`, `mode`, `played`; no schema bump
+- [x] `defaults.ts` — `HOLD_PRESETS`, `DEFAULT_HOLD_MS`, `DEFAULT_BEAT_ENTER`
+- [x] `useTimelinePlayback.ts` — beats scheduled against one offset, replay
+- [x] `TimelineMessage.tsx` — poster, play, accumulating beats, rest + replay
+- [x] `useTimelineComposer.ts` — beats beside one editor, explicit draft swap
+- [x] `TimelineComposer.tsx` — header + filmstrip, expands from the composer
+- [x] Beat card: select, hold chips; reorder + delete in the header
+- [x] `▶ Preview` through the real `TimelineMessage`
+- [x] Stick-to-bottom joins the beat-landed tick
+- [x] Seed collapsed to a single three-beat timeline message
+
+**Deferred from 7**
+- [ ] Drag-to-reorder in the filmstrip (arrows today).
+- [ ] Custom hold input beside the presets.
+- [ ] A `BeatCard` thumbnail instead of a media icon.
 
 **Deferred**
 - [ ] Compress media — 20MB total, `lk-gif-3.gif` alone is 11MB. Needs

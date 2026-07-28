@@ -25,9 +25,14 @@ export type ChatApi = {
    * Add a message from anyone. Returns the new id, which callers need — the fake
    * chatter reacts to the message you just sent, and can only find it by id.
    */
-  append: (authorId: AuthorId, body: Segment[]) => string
+  append: (authorId: AuthorId, body: Segment[], mode?: Message["mode"]) => string
   /** Add the emoji if this author hasn't used it here, remove it if they have. */
   toggleReaction: (messageId: string, emoji: string, authorId?: AuthorId) => void
+  /**
+   * Record that a timeline message played to the end, so a reload brings it back
+   * finished rather than asking to be watched again.
+   */
+  markPlayed: (messageId: string) => void
   /**
    * Empty the thread. The kill switch — note it does *not* reseed: the seed is
    * typed back in live by the fake chatter, so this leaves a blank thread for it
@@ -86,13 +91,14 @@ export function useChat(): ChatApi {
   }, [])
 
   const append = useCallback(
-    (authorId: AuthorId, body: Segment[]) => {
+    (authorId: AuthorId, body: Segment[], mode?: Message["mode"]) => {
       const message: Message = {
         id: crypto.randomUUID(),
         authorId,
         sentAt: Date.now(),
         body,
         reactions: [],
+        ...(mode === undefined ? {} : { mode }),
       }
       commit((current) => ({
         ...current,
@@ -120,6 +126,25 @@ export function useChat(): ChatApi {
     [commit]
   )
 
+  /**
+   * Idempotent, and deliberately a no-op on an already-played message: playback
+   * ends once, but replay ends again, and a second write would be a pointless
+   * render and a pointless trip to localStorage.
+   */
+  const markPlayed = useCallback(
+    (messageId: string) => {
+      const existing = latest.current.messages.find((m) => m.id === messageId)
+      if (existing === undefined || existing.played === true) return
+      commit((current) => ({
+        ...current,
+        messages: current.messages.map((message) =>
+          message.id === messageId ? { ...message, played: true } : message
+        ),
+      }))
+    },
+    [commit]
+  )
+
   /** Clearing starts the clock again: a fresh conversation gets a full lifetime. */
   const clear = useCallback(() => {
     clearThread()
@@ -138,6 +163,7 @@ export function useChat(): ChatApi {
     expiresAt: state.expiresAt,
     append,
     toggleReaction,
+    markPlayed,
     clear,
     extend,
   }

@@ -8,7 +8,7 @@ import type { Easing } from "motion/react"
 
 import { resolveEase } from "@/features/motion/eases"
 import { avatarUrl } from "./assets"
-import type { Author } from "./types"
+import type { Author, BeatEnter } from "./types"
 
 /**
  * The easing every animation in this feature uses. Defined once so "change the
@@ -53,6 +53,33 @@ export const REACT_DELAY_MS = 2_000
 
 /** Composer textarea ceiling before it starts scrolling. Mirrors `max-h-44`. */
 export const COMPOSER_MAX_HEIGHT_PX = 176
+
+/* -------------------------------------------------------------------------- */
+/* Timeline messages                                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The hold lengths the composer offers.
+ *
+ * Named rather than typed in: nobody composing a message thinks in milliseconds,
+ * and a chip you cycle is faster than a number you have to be right about. The
+ * real value is shown next to the label anyway, so the abstraction never hides
+ * what it's doing.
+ *
+ * A custom-duration input is a later addition, and needs nothing from the model:
+ * `hold` is stored as a plain number, and these are only suggestions about it.
+ */
+export const HOLD_PRESETS: { label: string; ms: number }[] = [
+  { label: "Quick", ms: 800 },
+  { label: "Normal", ms: 1_500 },
+  { label: "Long", ms: 3_000 },
+  { label: "Hold", ms: 5_000 },
+]
+
+/** What a new beat gets, and what a beat with no timing is read as. */
+export const DEFAULT_HOLD_MS = 1_500
+
+export const DEFAULT_BEAT_ENTER: BeatEnter = "fade"
 
 /**
  * How long a conversation lives before it resets itself.

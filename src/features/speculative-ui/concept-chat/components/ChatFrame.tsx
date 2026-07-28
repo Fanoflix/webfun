@@ -20,7 +20,10 @@ export function ChatFrame() {
     isTyping,
     mountedAt,
     composer,
+    timeline,
     toggleReaction,
+    markPlayed,
+    notifyBeatLand,
     reset,
     remainingMs,
     extend,
@@ -52,6 +55,8 @@ export function ChatFrame() {
           authorFor={authorFor}
           mountedAt={mountedAt}
           onToggleReaction={toggleReaction}
+          onPlayed={markPlayed}
+          onBeatLand={notifyBeatLand}
           scrollRef={scroll.ref}
           onScroll={scroll.onScroll}
         />
@@ -60,7 +65,7 @@ export function ChatFrame() {
             composer rather than occupying a row of its own. */}
         <div className="relative shrink-0">
           <TypingIndicator author={CHATTER} active={isTyping} />
-          <Composer composer={composer} />
+          <Composer composer={composer} timeline={timeline} />
         </div>
       </div>
     </div>

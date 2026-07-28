@@ -7,7 +7,8 @@ import { useComposer } from "./useComposer"
 import { useFakeChatter } from "./useFakeChatter"
 import { useNow } from "./useNow"
 import { useStickToBottom } from "./useStickToBottom"
-import type { Author, Segment, ThreadItem } from "./types"
+import { useTimelineComposer } from "./useTimelineComposer"
+import type { Author, Message, Segment, ThreadItem } from "./types"
 
 /**
  * Everything the page needs, assembled in one place.
@@ -27,7 +28,12 @@ export type ConceptChatApi = {
   /** Load time — messages newer than this animate in. */
   mountedAt: number
   composer: ReturnType<typeof useComposer>
+  timeline: ReturnType<typeof useTimelineComposer>
   toggleReaction: (messageId: string, emoji: string) => void
+  /** A timeline message reached its end — remember it so a reload doesn't rewind. */
+  markPlayed: (messageId: string) => void
+  /** A beat landed. Height changed without the thread changing; see `scroll`. */
+  notifyBeatLand: () => void
   reset: () => void
   /** Milliseconds until the conversation discards itself. Never negative. */
   remainingMs: number
@@ -40,8 +46,16 @@ export type ConceptChatApi = {
 }
 
 export function useConceptChat(): ConceptChatApi {
-  const { messages, items, expiresAt, append, toggleReaction, clear, extend } =
-    useChat()
+  const {
+    messages,
+    items,
+    expiresAt,
+    append,
+    toggleReaction,
+    markPlayed,
+    clear,
+    extend,
+  } = useChat()
 
   const now = useNow()
   const { isTyping, notifySent, replaySeed } = useFakeChatter({
@@ -66,7 +80,7 @@ export function useConceptChat(): ConceptChatApi {
    * while the tab is backgrounded and timers are throttled — this way the reset
    * happens as soon as the tab is live again.
    *
-   * **Effect 4 of 4.**
+   * **Effect 4 of 5.**
    */
   const resetRef = useRef(reset)
   resetRef.current = reset
@@ -79,22 +93,36 @@ export function useConceptChat(): ConceptChatApi {
   }, [expiresAt])
 
   const handleSend = useCallback(
-    (body: Segment[]) => {
-      const id = append(VIEWER_ID, body)
+    (body: Segment[], mode?: Message["mode"]) => {
+      const id = append(VIEWER_ID, body, mode)
       notifySent(id)
     },
     [append, notifySent]
   )
 
   const composer = useComposer(handleSend)
+  const timeline = useTimelineComposer(composer, handleSend)
 
   const mountedAt = useRef(Date.now()).current
+
+  /**
+   * A beat landing grows the thread without touching a single message, so it is
+   * invisible to `messages` — a timeline message would otherwise perform itself
+   * off the bottom of the screen. Counting the landings turns them into something
+   * the scroll can depend on.
+   *
+   * A counter rather than a direct scroll call: the pin has to happen after React
+   * has committed the new beat to the DOM, which is what the layout effect below
+   * already guarantees.
+   */
+  const [beatLandings, setBeatLandings] = useState(0)
+  const notifyBeatLand = useCallback(() => setBeatLandings((n) => n + 1), [])
 
   // `messages` covers every height change inside the scroller, including a
   // reaction added to the last message (which leaves the count untouched). The
   // typing indicator lives below the composer, outside this element, so it
   // can't move the thread and isn't a dependency.
-  const scroll = useStickToBottom([messages])
+  const scroll = useStickToBottom([messages, beatLandings])
 
   const [skipResetConfirm, setSkip] = useState(loadSkipResetConfirm)
 
@@ -124,7 +152,10 @@ export function useConceptChat(): ConceptChatApi {
       isTyping,
       mountedAt,
       composer,
+      timeline,
       toggleReaction: react,
+      markPlayed,
+      notifyBeatLand,
       reset,
       remainingMs,
       extend,
@@ -138,7 +169,9 @@ export function useConceptChat(): ConceptChatApi {
       extend,
       isTyping,
       items,
+      markPlayed,
       mountedAt,
+      notifyBeatLand,
       now,
       react,
       remainingMs,
@@ -146,6 +179,7 @@ export function useConceptChat(): ConceptChatApi {
       scroll,
       setSkipResetConfirm,
       skipResetConfirm,
+      timeline,
     ]
   )
 }

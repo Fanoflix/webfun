@@ -11,7 +11,7 @@ import { useEffect, useState } from "react"
  * always on screen and always changing, so there is no longer a quiet period to
  * back off into.
  *
- * **Effect 1 of 4.** Justified: there is no way to observe the passage of time
+ * **Effect 1 of 5.** Justified: there is no way to observe the passage of time
  * without one.
  */
 export function useNow(): number {

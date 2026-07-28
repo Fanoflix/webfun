@@ -25,6 +25,26 @@ export type ComposerApi = {
   inputRef: React.RefObject<HTMLTextAreaElement | null>
   /** Inserts at the caret rather than appending — the picker shouldn't jump the cursor. */
   insertAtCaret: (value: string) => void
+  /**
+   * Replace the entire draft. Used by the timeline composer, which swaps beats in
+   * and out of this one editor rather than growing an editor of its own.
+   */
+  loadDraft: (segments: Segment[]) => void
+  /** The draft as a message body, without clearing it. */
+  draftBody: Segment[]
+}
+
+/**
+ * A draft is one text segment followed by its attachments — the order they'd be
+ * read in. Shared with the timeline composer, which stores beats in exactly this
+ * shape, so a beat can be loaded back into the editor without a conversion.
+ */
+export function toDraftBody(text: string, attachments: Segment[]): Segment[] {
+  const trimmed = text.trim()
+  return [
+    ...(trimmed ? [{ kind: "text" as const, text: trimmed }] : []),
+    ...attachments,
+  ]
 }
 
 export function useComposer(onSend: (body: Segment[]) => void): ComposerApi {
@@ -34,18 +54,24 @@ export function useComposer(onSend: (body: Segment[]) => void): ComposerApi {
 
   const canSend = text.trim().length > 0 || attachments.length > 0
 
-  const submit = useCallback(() => {
-    const trimmed = text.trim()
-    const body: Segment[] = [
-      ...(trimmed ? [{ kind: "text" as const, text: trimmed }] : []),
-      ...attachments,
-    ]
-    if (body.length === 0) return
+  const draftBody = useMemo(
+    () => toDraftBody(text, attachments),
+    [attachments, text]
+  )
 
-    onSend(body)
+  const submit = useCallback(() => {
+    if (draftBody.length === 0) return
+
+    onSend(draftBody)
     setText("")
     setAttachments([])
-  }, [attachments, onSend, text])
+  }, [draftBody, onSend])
+
+  const loadDraft = useCallback((segments: Segment[]) => {
+    const textSegment = segments.find((segment) => segment.kind === "text")
+    setText(textSegment?.text ?? "")
+    setAttachments(segments.filter((segment) => segment.kind !== "text"))
+  }, [])
 
   const attachImage = useCallback((id: ImageId) => {
     setAttachments((current) => [...current, { kind: "image", assetId: id }])
@@ -94,13 +120,17 @@ export function useComposer(onSend: (body: Segment[]) => void): ComposerApi {
       submit,
       inputRef,
       insertAtCaret,
+      loadDraft,
+      draftBody,
     }),
     [
       attachments,
       attachGif,
       attachImage,
       canSend,
+      draftBody,
       insertAtCaret,
+      loadDraft,
       removeAttachment,
       submit,
       text,

@@ -14,6 +14,8 @@ export function MessageList({
   authorFor,
   mountedAt,
   onToggleReaction,
+  onPlayed,
+  onBeatLand,
   scrollRef,
   onScroll,
 }: {
@@ -22,6 +24,8 @@ export function MessageList({
   authorFor: (authorId: string) => Author
   mountedAt: number
   onToggleReaction: (messageId: string, emoji: string) => void
+  onPlayed: (messageId: string) => void
+  onBeatLand: () => void
   scrollRef: RefObject<HTMLDivElement | null>
   onScroll: () => void
 }) {
@@ -52,6 +56,8 @@ export function MessageList({
               now={now}
               mountedAt={mountedAt}
               onToggleReaction={onToggleReaction}
+              onPlayed={onPlayed}
+              onBeatLand={onBeatLand}
             />
           )
         )}

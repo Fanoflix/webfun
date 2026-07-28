@@ -11,8 +11,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   CHATTER,
-  REPLAY_BEAT_MS,
-  REPLAY_BURST_TYPING_MS,
   REPLAY_FIRST_TYPING_MS,
   THREAD_TTL_MS,
   VIEWER,
@@ -51,7 +49,30 @@ describe("ChatFrame", () => {
   it("renders the seeded conversation on a first visit", () => {
     render(<ChatFrame />)
     expect(screen.getByText(/hear me out/i)).toBeTruthy()
-    expect(screen.getByText(/knew how it was supposed/i)).toBeTruthy()
+    // The rest of the thought is held back until it's played — the seed is one
+    // timeline message now, not five lines already spent.
+    expect(screen.queryByText(/knew how it was supposed/i)).toBeNull()
+  })
+
+  it("opens on a playable message, so the idea is on screen immediately", () => {
+    render(<ChatFrame />)
+    expect(screen.getAllByRole("button", { name: "Play message" })).toHaveLength(
+      1
+    )
+  })
+
+  it("plays the seed through to the punchline", () => {
+    vi.useFakeTimers()
+    try {
+      render(<ChatFrame />)
+      fireEvent.click(screen.getByRole("button", { name: "Play message" }))
+      act(() => void vi.advanceTimersByTime(10_000))
+
+      expect(screen.getByText(/timing is the entire joke/i)).toBeTruthy()
+      expect(screen.getByText(/knew how it was supposed/i)).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("shows a single date divider for a same-day seed", () => {
@@ -130,10 +151,11 @@ describe("ChatFrame", () => {
       act(() => void vi.advanceTimersByTime(REPLAY_FIRST_TYPING_MS))
       expect(screen.getByText(/hear me out/i)).toBeTruthy()
 
-      // And it keeps going rather than stopping at the first line — the next
-      // three arrive in a quick burst.
-      act(() => void vi.advanceTimersByTime(REPLAY_BEAT_MS + REPLAY_BURST_TYPING_MS))
-      expect(screen.getByText(/timing is the entire joke/i)).toBeTruthy()
+      // It lands unplayed, so the reset leaves the demo exactly where a first
+      // visit starts rather than a step ahead of it.
+      expect(
+        screen.getByRole("button", { name: "Play message" })
+      ).toBeTruthy()
     } finally {
       vi.useRealTimers()
     }

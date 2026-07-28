@@ -1,13 +1,15 @@
 import type { KeyboardEvent } from "react"
-import { Plus, SendHorizontal, Smile, X } from "lucide-react"
+import { Plus, SendHorizontal, Smile, SquarePlay, X } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 import { gifUrl, imageUrl } from "../engine/assets"
 import { CHAT_EASE } from "../engine/defaults"
 import type { ComposerApi } from "../engine/useComposer"
+import type { TimelineComposerApi } from "../engine/useTimelineComposer"
 import { AttachPanel } from "./AttachPanel"
 import { EmojiPicker } from "./EmojiPicker"
+import { TimelineComposer } from "./TimelineComposer"
 
 /**
  * The input bar. Discord-shaped: `+` on the left, emoji on the right, no send
@@ -17,7 +19,13 @@ import { EmojiPicker } from "./EmojiPicker"
  * `max-h-44`. See `AutoGrowTextarea` for why that height is CSS-driven.
  */
 
-export function Composer({ composer }: { composer: ComposerApi }) {
+export function Composer({
+  composer,
+  timeline,
+}: {
+  composer: ComposerApi
+  timeline: TimelineComposerApi
+}) {
   const reduced = useReducedMotion()
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -31,7 +39,12 @@ export function Composer({ composer }: { composer: ComposerApi }) {
       return
     }
     event.preventDefault()
-    composer.submit()
+    // Enter is "I'm done with this thought". In a plain message that means send;
+    // in a timeline message it means the next beat — which is the same gesture
+    // someone already makes when they hammer out a thought across three
+    // messages, and it's why composing one never feels like using an editor.
+    if (timeline.active) timeline.addBeat()
+    else composer.submit()
   }
 
   return (
@@ -49,6 +62,12 @@ export function Composer({ composer }: { composer: ComposerApi }) {
       // divider. Any gap here breaks that alignment.
       className="border-t border-border bg-secondary/40"
     >
+      {timeline.active && (
+        <motion.div layout={reduced ? false : true}>
+          <TimelineComposer timeline={timeline} />
+        </motion.div>
+      )}
+
       {/* The rows carry `layout` as well. A layout animation resizes its subject
           with a transform, which squashes whatever is inside it unless the
           children counter-scale — without this the thumbnails and the input
@@ -106,11 +125,30 @@ export function Composer({ composer }: { composer: ComposerApi }) {
           }
         />
 
+        {/* The one control that turns a message into a performance. Off by
+            default and unlabelled: it's the concept's front door, not a mode
+            anyone should have to opt out of. */}
+        {!timeline.active && (
+          <button
+            type="button"
+            onClick={timeline.enable}
+            aria-label="Compose a timeline message"
+            className={ICON_BUTTON}
+          >
+            <SquarePlay className="size-4" />
+          </button>
+        )}
+
         <AutoGrowTextarea
           value={composer.text}
           onChange={composer.setText}
           onKeyDown={onKeyDown}
           inputRef={composer.inputRef}
+          placeholder={
+            timeline.active
+              ? `Beat ${timeline.selectedIndex + 1} — Enter for the next`
+              : "Message FakeAmmar"
+          }
         />
 
         <EmojiPicker
@@ -127,15 +165,19 @@ export function Composer({ composer }: { composer: ComposerApi }) {
         />
 
         {/* Enter-to-send has no mobile equivalent — no Shift key, and the soft
-            keyboard's return inserts a newline. So small screens get a button. */}
+            keyboard's return inserts a newline. So small screens get a button.
+            In timeline mode Enter belongs to "next beat", so every screen does. */}
         <button
           type="button"
-          onClick={composer.submit}
-          disabled={!composer.canSend}
+          onClick={timeline.active ? timeline.submit : composer.submit}
+          disabled={timeline.active ? !timeline.canSend : !composer.canSend}
           aria-label="Send message"
           className={cn(
-            "flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-150 sm:hidden",
-            composer.canSend ? "hover:text-foreground" : "opacity-40"
+            "flex size-8 shrink-0 items-center justify-center text-muted-foreground transition-colors duration-150",
+            timeline.active ? "" : "sm:hidden",
+            (timeline.active ? timeline.canSend : composer.canSend)
+              ? "hover:text-foreground"
+              : "opacity-40"
           )}
         >
           <SendHorizontal className="size-4" />
@@ -161,11 +203,13 @@ function AutoGrowTextarea({
   onChange,
   onKeyDown,
   inputRef,
+  placeholder,
 }: {
   value: string
   onChange: (value: string) => void
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void
   inputRef: ComposerApi["inputRef"]
+  placeholder: string
 }) {
   return (
     <div className="grid max-h-44 flex-1 overflow-y-auto">
@@ -175,7 +219,7 @@ function AutoGrowTextarea({
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
         rows={1}
-        placeholder="Message FakeAmmar"
+        placeholder={placeholder}
         className="col-start-1 row-start-1 resize-none overflow-hidden bg-transparent px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none"
       />
       <span
