@@ -25,8 +25,8 @@ export function FutureTableDemo() {
     <div className="w-full max-w-3xl space-y-4">
       <ToolIntro title="Concept table 1">
         Most tables throw their rows away and build new ones every time the data
-        changes. This one never moves a row — the slots stay put and the contents
-        flip over in place, like a train station departure board.
+        changes. This one never moves a row — the slots stay put and the
+        contents flip over in place, like a train station departure board.
       </ToolIntro>
 
       <div className="flex flex-wrap gap-2">
@@ -37,7 +37,7 @@ export function FutureTableDemo() {
         <Button variant="outline" onClick={updateStatuses} disabled={!hasData}>
           Update statuses
         </Button>
-        <Button variant="outline" onClick={clear} disabled={!hasData}>
+        <Button variant="destructive" onClick={clear} disabled={!hasData}>
           Clear
         </Button>
       </div>
