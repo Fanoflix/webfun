@@ -17,3 +17,7 @@ todos.json
 
 # private reel scripts (per-tool)
 short-demo.md
+
+# Yarn (node-modules linker)
+.yarn/*
+!.yarn/patches
