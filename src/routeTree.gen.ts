@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TanstackShowcaseRouteImport } from './routes/tanstack-showcase'
 import { Route as StyleFlowRouteImport } from './routes/style-flow'
 import { Route as LowResVideoRouteImport } from './routes/low-res-video'
 import { Route as FutureTableRouteImport } from './routes/future-table'
@@ -18,6 +19,11 @@ import { Route as CharacterFlowRouteImport } from './routes/character-flow'
 import { Route as AntiAliasingRouteImport } from './routes/anti-aliasing'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TanstackShowcaseRoute = TanstackShowcaseRouteImport.update({
+  id: '/tanstack-showcase',
+  path: '/tanstack-showcase',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StyleFlowRoute = StyleFlowRouteImport.update({
   id: '/style-flow',
   path: '/style-flow',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
   '/style-flow': typeof StyleFlowRoute
+  '/tanstack-showcase': typeof TanstackShowcaseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
   '/style-flow': typeof StyleFlowRoute
+  '/tanstack-showcase': typeof TanstackShowcaseRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/future-table': typeof FutureTableRoute
   '/low-res-video': typeof LowResVideoRoute
   '/style-flow': typeof StyleFlowRoute
+  '/tanstack-showcase': typeof TanstackShowcaseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/future-table'
     | '/low-res-video'
     | '/style-flow'
+    | '/tanstack-showcase'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/future-table'
     | '/low-res-video'
     | '/style-flow'
+    | '/tanstack-showcase'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/future-table'
     | '/low-res-video'
     | '/style-flow'
+    | '/tanstack-showcase'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,10 +144,18 @@ export interface RootRouteChildren {
   FutureTableRoute: typeof FutureTableRoute
   LowResVideoRoute: typeof LowResVideoRoute
   StyleFlowRoute: typeof StyleFlowRoute
+  TanstackShowcaseRoute: typeof TanstackShowcaseRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tanstack-showcase': {
+      id: '/tanstack-showcase'
+      path: '/tanstack-showcase'
+      fullPath: '/tanstack-showcase'
+      preLoaderRoute: typeof TanstackShowcaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/style-flow': {
       id: '/style-flow'
       path: '/style-flow'
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   FutureTableRoute: FutureTableRoute,
   LowResVideoRoute: LowResVideoRoute,
   StyleFlowRoute: StyleFlowRoute,
+  TanstackShowcaseRoute: TanstackShowcaseRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

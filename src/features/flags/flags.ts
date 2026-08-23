@@ -21,6 +21,7 @@ export type ToolKey =
   | "style-flow"
   | "future-table"
   | "concept-chat"
+  | "tanstack-showcase"
 
 export const ALL_TOOLS: readonly ToolKey[] = [
   "dithering",
@@ -30,6 +31,7 @@ export const ALL_TOOLS: readonly ToolKey[] = [
   "style-flow",
   "future-table",
   "concept-chat",
+  "tanstack-showcase",
 ]
 
 /**

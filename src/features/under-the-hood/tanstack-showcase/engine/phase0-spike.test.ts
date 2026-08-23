@@ -47,7 +47,7 @@ function makeCollection(server: ReturnType<typeof makeServer>) {
       getKey: (t) => t.id,
       onInsert: async ({ transaction }) => {
         for (const m of transaction.mutations) {
-          await server.insert(m.modified as Ticket)
+          await server.insert(m.modified)
         }
       },
     })

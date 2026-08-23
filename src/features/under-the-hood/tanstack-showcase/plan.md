@@ -1,6 +1,6 @@
 # TanStack showcase — plan
 
-Status: **Phase 0 passed (2026-08-23).** Phase 1 is next.
+Status: **Phase 1 built (2026-08-23).** Phase 2 (Architecture mode) is next.
 
 ## The idea
 
@@ -144,8 +144,25 @@ state chip and a staleness countdown ring, driven by the real timers.
   Query-backed sync into a collection, a live query updating with no refetch, and
   an optimistic insert rolling back automatically when the server rejects. Keep
   it as a regression test against `0.x` bumps.
-- **Phase 1.** Fake server + event bus + rungs 0/1 + App mode + Timeline.
-  **Shippable alone.**
+- **Phase 1. ✅ BUILT.** Fake server + event bus + rungs 0/1 + App mode +
+  Timeline, live at `/tanstack-showcase` under a new "Under the hood" nav group.
+  `rungs/rungs.test.tsx` pins the behaviours the ladder claims.
+
+  Two findings worth keeping:
+
+  1. **The app runs inside `<StrictMode>`** — TanStack Start's default client
+     entry (`@tanstack/react-start/dist/plugin/default-entry/client.tsx`) adds
+     it, not our code. In dev that double-invokes effects, so **rung 0 fires its
+     list fetch twice** and the timeline shows two requests. It is StrictMode
+     doing its job (surfacing a non-resilient effect) and does *not* happen in a
+     production build. Rung 1 shows one request because Query deduplicates
+     concurrent identical fetches. Decide before filming whether to show, label,
+     or suppress this.
+  2. **`observerAdded` alone does not mean "no request".** Reporting every
+     observer-with-data as a cache hit was wrong: outside the stale window Query
+     paints the cached value *and* refetches behind it, so the timeline promised
+     a free read and then showed the request. Now split into `query:cache:hit`
+     (fresh, nothing requested) and `query:cache:stale` (served, revalidating).
 - **Phase 2.** Architecture mode, wired to the same stream.
 - **Phase 3.** Rung 2, optimistic rollback, teammate actor.
 - **Phase 4.** Code panel, `how-it-works.md`, reel script.
