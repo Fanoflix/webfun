@@ -5,12 +5,14 @@ import { resolveEase } from "@/features/motion/eases"
 import { cn } from "@/lib/utils"
 import {
   COLUMN_LABEL,
+  LIBRARY,
   MONO,
   NET_GRID,
   NETWORK,
   PANEL,
   PANEL_HEADER,
 } from "../styles"
+import type { NodeId } from "../engine/types"
 import type { ChildRow, RowStatus, Timeline, TimelineRow } from "./useTimeline"
 
 /**
@@ -51,7 +53,14 @@ export function TimelinePanel({ timeline }: { timeline: Timeline }) {
       <ScrollArea className="min-h-0 flex-1">
         {timeline.isEmpty ? (
           <p className="px-3 py-3 text-xs text-muted-foreground">
-            Click a ticket, or add one, to see what it costs.
+            {timeline.hasFlow ? (
+              <>
+                Nothing. No request, no cache lookup — the data was already
+                here.
+              </>
+            ) : (
+              <>Click a ticket, or add one, to see what it costs.</>
+            )}
           </p>
         ) : (
           <ul>
@@ -79,15 +88,18 @@ function NetworkRow({ row }: { row: TimelineRow }) {
       className="border-b border-border/60 px-3 py-1.5 hover:bg-accent/40"
     >
       <div className={NET_GRID}>
-        <span
-          className={cn(
-            MONO,
-            "truncate",
-            row.status.kind === "local" && "text-muted-foreground"
-          )}
-          title={row.name}
-        >
-          {row.name}
+        <span className="flex min-w-0 items-baseline gap-1.5">
+          <SourceTag source={row.source} />
+          <span
+            className={cn(
+              MONO,
+              "truncate",
+              row.status.kind === "local" && "text-muted-foreground"
+            )}
+            title={row.name}
+          >
+            {row.name}
+          </span>
         </span>
         <StatusCell status={row.status} />
         <span
@@ -128,6 +140,36 @@ function NetworkRow({ row }: { row: TimelineRow }) {
   )
 }
 
+/** How each source writes itself, and in whose colour. */
+const SOURCE_META: Partial<Record<NodeId, { label: string; color: string }>> = {
+  query: { label: "query", color: LIBRARY.query },
+  db: { label: "db", color: LIBRARY.db },
+  sync: { label: "sync", color: LIBRARY.sync },
+}
+
+/**
+ * Which library is responsible for a row. Sits at the left of the line, so a
+ * column of tags is scannable — you can see at a glance whether a flow was
+ * Query's work or DB's without reading a word of it.
+ */
+function SourceTag({ source }: { source: NodeId | null }) {
+  const meta = source ? SOURCE_META[source] : undefined
+  if (!meta) return null
+  return (
+    <span
+      className="shrink-0 rounded-sm px-1 font-mono text-[9px] tracking-wide lowercase"
+      style={{
+        color: meta.color,
+        // A tint of the accent rather than the accent itself: at this size a
+        // filled chip would shout louder than the row it labels.
+        backgroundColor: `${meta.color}1f`,
+      }}
+    >
+      {meta.label}
+    </span>
+  )
+}
+
 function StatusCell({ status }: { status: RowStatus }) {
   if (status.kind === "pending") {
     return <span className={cn(MONO, "text-muted-foreground/60")}>pending</span>
@@ -156,6 +198,7 @@ const CHILD_TONE_CLASS: Record<ChildRow["tone"], string> = {
   cache: "text-muted-foreground",
   write: "text-muted-foreground",
   invalidate: "text-foreground/70",
+  optimistic: "text-foreground/80",
   error: "",
 }
 
@@ -168,6 +211,7 @@ function ChildLine({ child }: { child: ChildRow }) {
       )}
       style={child.tone === "error" ? { color: NETWORK.error } : undefined}
     >
+      <SourceTag source={child.source} />
       <span className="truncate">{child.label}</span>
     </li>
   )

@@ -45,6 +45,21 @@ export const NET_GRID = "grid grid-cols-[1fr_auto_auto] items-baseline gap-x-3"
  * waiting / download, but our fake server has a single latency with no transfer
  * phase — inventing a download segment would be drawing a number we don't have.
  */
+/**
+ * Per-library accents for the timeline's source tags.
+ *
+ * `query` is TanStack Query's signature red, which is well attested. `db` is
+ * NOT verified — `@tanstack/db` ships no brand colours and nothing in the
+ * installed packages states one, so this is a stand-in chosen to sit apart from
+ * the red without clashing. Swap it the moment the real value is known.
+ */
+export const LIBRARY = {
+  query: "#cc7d33",
+  db: "#0a448f",
+  /** The sync engine isn't a separate product; it stays neutral. */
+  sync: "#7c8698",
+} as const
+
 export const NETWORK = {
   /** TTFB / waiting — the orange that dominates a real waterfall. */
   waiting: "#f5a623",

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useSidebar } from "@/components/ui/sidebar"
 
@@ -6,7 +6,7 @@ import { createEventBus } from "../engine/events"
 import { createServer, DEFAULT_SERVER_CONFIG } from "../engine/server"
 import type { ServerConfig } from "../engine/server"
 import type { RungId } from "../engine/rungs"
-import { RUNGS } from "../engine/rungs"
+import { RUNGS, RUNG_SWITCH_MS } from "../engine/rungs"
 import { useEventStream } from "../engine/useEventStream"
 import { useTimeline } from "../timeline/useTimeline"
 import type { TicketsView } from "../rungs/contract"
@@ -37,6 +37,16 @@ export function useTanstackShowcase() {
     DEFAULT_SERVER_CONFIG
   )
   const [rung, setRungState] = useState<RungId>(0)
+  /**
+   * The rung being switched *to* while the reset animation runs, or null.
+   *
+   * The swap is deliberately deferred rather than instant: changing rung
+   * rebuilds the whole data layer, and the incoming one must not mount until the
+   * animation is over, or its first fetch happens behind the blur where nobody
+   * can see it — which is the one thing worth watching.
+   */
+  const [pendingRung, setPendingRung] = useState<RungId | null>(null)
+  const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mode, setMode] = useState<Mode>("app")
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
@@ -67,11 +77,26 @@ export function useTanstackShowcase() {
 
   const setRung = useCallback(
     (next: RungId) => {
-      setRungState(next)
-      setSelectedId(null)
-      bus.beginFlow(`Switched to ${RUNGS[next].name}`)
+      // Ignore a re-click on the current rung, and anything during a switch —
+      // two overlapping resets would leave a stray timer holding the old rung.
+      if (next === rung || pendingRung !== null) return
+      setPendingRung(next)
+      switchTimer.current = setTimeout(() => {
+        setRungState(next)
+        setSelectedId(null)
+        bus.beginFlow(`Switched to ${RUNGS[next].name}`)
+        setPendingRung(null)
+      }, RUNG_SWITCH_MS)
     },
-    [bus]
+    [bus, rung, pendingRung]
+  )
+
+  // Cleanup only: a pending switch must not fire into an unmounted component.
+  useEffect(
+    () => () => {
+      if (switchTimer.current) clearTimeout(switchTimer.current)
+    },
+    []
   )
 
   /**
@@ -120,6 +145,9 @@ export function useTanstackShowcase() {
     updateServerConfig,
     rung,
     setRung,
+    /** What the ladder should highlight: the target as soon as it's clicked. */
+    displayRung: pendingRung ?? rung,
+    switchingTo: pendingRung === null ? null : RUNGS[pendingRung].name,
     mode,
     setMode,
     selectedId,

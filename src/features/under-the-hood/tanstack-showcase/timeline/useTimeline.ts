@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 
-import type { EventKind, Flow, ShowcaseEvent } from "../engine/types"
+import type { EventKind, Flow, NodeId, ShowcaseEvent } from "../engine/types"
 
 /**
  * What a row's Status column says. Mirrors how Chrome reports a cached response
@@ -17,11 +17,28 @@ export type ChildRow = {
   id: string
   label: string
   detail?: string
-  tone: "cache" | "write" | "invalidate" | "error"
+  tone: "cache" | "write" | "invalidate" | "error" | "optimistic"
+  /**
+   * Which part of the system did this, so the row can say whose move it was.
+   *
+   * Stored as the node, not a label: the panel owns how it's written and
+   * coloured. Worth showing at all because the panel deliberately looks like a
+   * browser's network tab, where every row is the browser's own work — here
+   * half of them are a library's, and which library is the whole subject.
+   */
+  source: NodeId | null
 }
+
+/** Nodes that are a library doing something, as opposed to plain HTTP. */
+const TAGGED_NODES: NodeId[] = ["query", "db", "sync"]
+
+const sourceOf = (node: NodeId): NodeId | null =>
+  TAGGED_NODES.includes(node) ? node : null
 
 export type TimelineRow = {
   id: string
+  /** Set on rows that never touched the network, naming the part responsible. */
+  source: NodeId | null
   /** "GET /tickets", or the query key when nothing went to the network. */
   name: string
   status: RowStatus
@@ -37,18 +54,38 @@ export type Timeline = {
   rows: TimelineRow[]
   duration: string
   isEmpty: boolean
+  /**
+   * Has anything been done yet?
+   *
+   * Separate from `isEmpty` because the two mean opposite things. No flow means
+   * "you haven't tried anything". A flow with no rows means "you did something
+   * and it cost nothing at all" — which, at rung 2, is the entire point and
+   * must not be mistaken for the panel failing to record.
+   */
+  hasFlow: boolean
 }
 
 const formatMs = (ms: number) =>
   ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(2)}s`
 
-/** How each local event reads in a child row. */
+/**
+ * How each local event reads in a row.
+ *
+ * Every non-network event kind that should ever appear has to be listed here —
+ * anything missing is dropped on the floor, which is exactly how rung 2's
+ * whole story went missing the first time.
+ */
 const CHILD_TONE: Partial<Record<EventKind, ChildRow["tone"]>> = {
   "query:cache:hit": "cache",
   "query:cache:stale": "cache",
   "query:cache:write": "write",
   "query:invalidate": "invalidate",
   "query:error": "error",
+  "db:optimistic:apply": "optimistic",
+  "db:optimistic:rollback": "error",
+  "sync:enqueue": "write",
+  "sync:push": "write",
+  "sync:ack": "cache",
 }
 
 /** A row still waiting for its response. */
@@ -81,6 +118,7 @@ export function useTimeline(flow: Flow | null): Timeline {
         rows: [],
         duration: "—",
         isEmpty: true,
+        hasFlow: flow !== null,
       }
     }
 
@@ -111,6 +149,7 @@ export function useTimeline(flow: Flow | null): Timeline {
     ): OpenRow => {
       const row: OpenRow = {
         id: event.id,
+        source: null,
         name,
         status: { kind: "pending" },
         time: "—",
@@ -183,6 +222,7 @@ export function useTimeline(flow: Flow | null): Timeline {
             label: event.label,
             detail: event.detail,
             tone,
+            source: sourceOf(event.node),
           }
           if (parent) {
             parent.children.push(child)
@@ -192,6 +232,7 @@ export function useTimeline(flow: Flow | null): Timeline {
           // row of its own, with a pseudo-status instead of a code.
           rows.push({
             id: event.id,
+            source: sourceOf(event.node),
             name: event.detail ?? event.label,
             status: { kind: "local", label: localLabel(event.kind) },
             time: "0ms",
@@ -219,13 +260,19 @@ export function useTimeline(flow: Flow | null): Timeline {
       rows,
       duration: formatMs(span),
       isEmpty: rows.length === 0,
+      hasFlow: true,
     }
   }, [flow])
 }
 
+/** The pseudo-status a row gets when nothing went to the network for it. */
 function localLabel(kind: EventKind): string {
   if (kind === "query:cache:hit") return "from cache"
   if (kind === "query:cache:stale") return "cache · stale"
   if (kind === "query:invalidate") return "invalidated"
+  if (kind === "db:optimistic:apply") return "optimistic"
+  if (kind === "db:optimistic:rollback") return "rolled back"
+  if (kind === "sync:enqueue" || kind === "sync:push") return "queued"
+  if (kind === "sync:ack") return "acked"
   return "local"
 }
