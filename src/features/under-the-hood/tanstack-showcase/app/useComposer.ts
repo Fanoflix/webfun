@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react"
 
+import { CURRENT_USER } from "./people"
+
 /**
  * The new-ticket form's state. Plain controlled inputs for now — TanStack Form
  * arrives with the always-on tools in a later phase, and putting it in early
@@ -9,15 +11,16 @@ export function useComposer(
   onCreate: (title: string, assignee: string) => void
 ) {
   const [title, setTitle] = useState("")
-  const [assignee, setAssignee] = useState("sam")
 
   const canSubmit = title.trim().length > 0
 
   const submit = useCallback(() => {
     if (!canSubmit) return
-    onCreate(title.trim(), assignee)
+    // Filed as the signed-in user. The data layer still takes an assignee —
+    // that's a property of a ticket — it just isn't something the UI asks for.
+    onCreate(title.trim(), CURRENT_USER)
     setTitle("")
-  }, [canSubmit, onCreate, title, assignee])
+  }, [canSubmit, onCreate, title])
 
-  return { title, setTitle, assignee, setAssignee, canSubmit, submit }
+  return { title, setTitle, canSubmit, submit }
 }

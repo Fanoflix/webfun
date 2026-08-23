@@ -33,35 +33,124 @@ const SEED: Ticket[] = [
     title: "Login redirect loops on Safari",
     status: "open",
     assignee: "sam",
-    body: "Only on Safari 17. The callback bounces between /login and /auth until the tab is closed.",
+    body: [
+      "Only on Safari 17. The callback bounces between /login and /auth until the tab is closed.",
+      "Chrome and Firefox are unaffected. It doesn't reproduce in a private window either, which points at stored state rather than the redirect itself.",
+      "Three support tickets this week, all on the same version.",
+    ],
+    comments: [
+      {
+        id: "c1",
+        author: "ada",
+        body: "Reproduced on 17.4 but not 16.6, so it's new. Bisecting the auth callback now.",
+        at: "3d ago",
+      },
+      {
+        id: "c2",
+        author: "sam",
+        body: "It's the `SameSite=Lax` cookie — Safari drops it on the redirect back, so the session looks empty and we bounce.",
+        at: "2d ago",
+      },
+      {
+        id: "c3",
+        author: "kit",
+        body: "Ouch. Does that mean every third-party redirect is affected, or just this one?",
+        at: "2d ago",
+      },
+    ],
   },
   {
     id: 2,
     title: "Dark mode flickers on first paint",
     status: "in-progress",
     assignee: "ada",
-    body: "The theme class lands after hydration, so the page flashes light for about 80ms.",
+    body: [
+      "The theme class lands after hydration, so the page flashes light for about 80ms.",
+      "Worse on a cold cache, and it happens on every route rather than just the first one.",
+      "An inline script in the head would set the class before first paint.",
+    ],
+    comments: [
+      {
+        id: "c1",
+        author: "kit",
+        body: "Only visible on a cold load. Hard refresh a few times and you'll catch it.",
+        at: "5d ago",
+      },
+      {
+        id: "c2",
+        author: "ada",
+        body: "The theme class is applied after hydration. Moving it to an inline script in the head should kill it.",
+        at: "4d ago",
+      },
+    ],
   },
   {
     id: 3,
     title: "Export CSV drops the last row",
     status: "open",
     assignee: "kit",
-    body: "Off-by-one in the writer. Reproducible with any export of more than one row.",
+    body: [
+      "Off-by-one in the writer. Reproducible with any export of more than one row.",
+      "The header is correct and the column order is right, so it's the flush at the end rather than the mapping.",
+      "Worth a regression test — this is the second time this has come back.",
+    ],
+    comments: [
+      {
+        id: "c1",
+        author: "sam",
+        body: "Confirmed with a 3-row export — got 2 rows.",
+        at: "1d ago",
+      },
+      {
+        id: "c2",
+        author: "kit",
+        body: "Classic off-by-one: the writer flushes before the last append.",
+        at: "22h ago",
+      },
+    ],
   },
   {
     id: 4,
     title: "Search is slow past 10k rows",
     status: "done",
     assignee: "sam",
-    body: "Added a trigram index. Median query went from 1.9s to 40ms.",
+    body: [
+      "Added a trigram index on title. Median query went from 1.9s to 40ms.",
+      "The p99 is still around 300ms on the largest workspaces, which we can live with for now.",
+      "Closing this. Reopen if anyone hits the tail case.",
+    ],
+    comments: [
+      {
+        id: "c1",
+        author: "sam",
+        body: "Added a trigram index on title. p50 went 1.9s to 40ms, p99 still 300ms.",
+        at: "1w ago",
+      },
+      {
+        id: "c2",
+        author: "ada",
+        body: "Good enough to close. We can revisit p99 if anyone complains.",
+        at: "6d ago",
+      },
+    ],
   },
   {
     id: 5,
     title: "Avatar upload rejects PNGs",
     status: "open",
     assignee: "ada",
-    body: "The mime allowlist checks for image/jpeg only. PNG and WebP both bounce.",
+    body: [
+      "The mime allowlist checks for image/jpeg only, so PNG and WebP both bounce.",
+      "The toast just says 'unsupported file' without naming which formats are allowed, so people retry the same file.",
+    ],
+    comments: [
+      {
+        id: "c1",
+        author: "ada",
+        body: "The allowlist only has image/jpeg. PNG and WebP both bounce.",
+        at: "4h ago",
+      },
+    ],
   },
 ]
 
@@ -131,7 +220,8 @@ export function createServer(bus: EventBus, config: ServerConfig) {
             title,
             status: "open",
             assignee,
-            body: "Filed from the composer.",
+            body: ["Filed from the composer."],
+            comments: [],
           }
           rows = [created, ...rows]
           return { ...created }

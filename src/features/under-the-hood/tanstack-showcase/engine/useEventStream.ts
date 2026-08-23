@@ -11,6 +11,6 @@ import type { Flow } from "./types"
  * this is the primitive built for the job — no mirror copy of the flow in React
  * state, and nothing to keep in sync.
  */
-export function useEventStream(bus: EventBus): Flow | null {
-  return useSyncExternalStore(bus.subscribe, bus.getFlow, bus.getFlow)
+export function useEventStream(bus: EventBus): Flow[] {
+  return useSyncExternalStore(bus.subscribe, bus.getFlows, bus.getFlows)
 }

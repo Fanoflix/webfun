@@ -10,13 +10,35 @@
 
 export type TicketStatus = "open" | "in-progress" | "done"
 
+/**
+ * A comment on a ticket. Read-only in this demo — there's no compose box, and
+ * nothing here writes one. They exist so the detail pane has the shape of a
+ * real issue tracker rather than a title and one line.
+ *
+ * `at` is a fixed human string rather than a timestamp: nothing sorts or
+ * recomputes it, and a real clock would only add drift for no visible gain.
+ */
+export type Comment = {
+  id: string
+  author: string
+  body: string
+  at: string
+}
+
 export type Ticket = {
   id: number
   title: string
   status: TicketStatus
   assignee: string
-  /** One-line description, so the detail pane has something real to show. */
-  body: string
+  /**
+   * The description, as separate lines.
+   *
+   * An array rather than one string so the detail pane can lay it out as real
+   * paragraphs, and so the inbox preview can show just the first line without
+   * having to cut a sentence in half.
+   */
+  body: string[]
+  comments: Comment[]
 }
 
 /**
@@ -39,6 +61,7 @@ export type EventKind =
   | "query:cache:write"
   | "query:invalidate"
   | "query:error"
+  | "db:live:read"
   | "db:optimistic:apply"
   | "db:optimistic:rollback"
   | "sync:enqueue"
@@ -77,9 +100,20 @@ export type ShowcaseEvent = {
  * "reset and repopulate" behaviour falls out of it, with no quiescence timer to
  * tune and no way for two flows to interleave.
  */
+/**
+ * Who started a segment.
+ *
+ * `interaction` is something the person did; `system` is the app loading itself
+ * — a first mount, or the cold start after switching rung. Worth distinguishing
+ * because the log is trying to answer "what did *my click* cost", and a boot
+ * sequence billed to the reader would muddle that.
+ */
+export type FlowKind = "interaction" | "system"
+
 export type Flow = {
   id: string
   label: string
+  kind: FlowKind
   startedAt: number
   events: ShowcaseEvent[]
 }

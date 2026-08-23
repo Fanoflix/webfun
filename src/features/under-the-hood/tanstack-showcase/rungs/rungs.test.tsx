@@ -7,15 +7,30 @@ import { createEventBus } from "../engine/events"
 import type { Server } from "../engine/server"
 import type { Ticket } from "../engine/types"
 import { RungHost } from "./RungHost"
+import type { TicketsView } from "./contract"
 
 const TICKETS: Ticket[] = [
-  { id: 1, title: "One", status: "open", assignee: "sam", body: "first" },
-  { id: 2, title: "Two", status: "done", assignee: "ada", body: "second" },
+  {
+    id: 1,
+    title: "One",
+    status: "open",
+    assignee: "sam",
+    body: ["first"],
+    comments: [],
+  },
+  {
+    id: 2,
+    title: "Two",
+    status: "done",
+    assignee: "ada",
+    body: ["second"],
+    comments: [],
+  },
 ]
 
 /** A server that answers instantly and counts what it was asked. */
-function countingServer() {
-  const calls = { list: 0, detail: [] as number[] }
+function countingServer({ failWrites = false } = {}) {
+  const calls = { list: 0, detail: [] as number[], writes: 0 }
   const server = {
     setConfig: () => {},
     listTickets: async () => {
@@ -26,25 +41,58 @@ function countingServer() {
       calls.detail.push(id)
       return { ...TICKETS.find((t) => t.id === id)! }
     },
-    createTicket: async () => TICKETS[0],
-    setStatus: async () => TICKETS[0],
-    deleteTicket: async () => {},
+    createTicket: async () => {
+      calls.writes += 1
+      if (failWrites) throw new Error("server rejected the write")
+      return TICKETS[0]
+    },
+    setStatus: async (id: number, status: Ticket["status"]) => {
+      calls.writes += 1
+      if (failWrites) throw new Error("server rejected the write")
+      return { ...TICKETS.find((t) => t.id === id)!, status }
+    },
+    deleteTicket: async () => {
+      calls.writes += 1
+      if (failWrites) throw new Error("server rejected the write")
+    },
   }
   return { calls, server: server as unknown as Server }
 }
 
 /** Mounts a rung and exposes the ticket count so we can await a render. */
+/**
+ * Holds onto the live view object so a test can call its handlers and read the
+ * result. Needed for the optimistic-write assertions, which have to inspect the
+ * data between the click and the server round-trip.
+ */
+function captureView() {
+  const box: {
+    current: TicketsView | null
+    capture: (v: TicketsView) => void
+  } = {
+    current: null,
+    capture: (view) => {
+      box.current = view
+    },
+  }
+  return box
+}
+
 function renderRung(
-  rung: 0 | 1,
+  rung: 0 | 1 | 2,
   server: Server,
   selectedId: number | null,
-  strict = false
+  strict = false,
+  onView?: (view: TicketsView) => void
 ) {
   const bus = createEventBus()
   bus.beginFlow("test")
   const host = (id: number | null) => (
     <RungHost rung={rung} server={server} bus={bus} selectedId={id}>
-      {(view) => <div data-testid="count">{view.list.length}</div>}
+      {(view) => {
+        onView?.(view)
+        return <div data-testid="count">{view.list.length}</div>
+      }}
     </RungHost>
   )
   const ui = (id: number | null) =>
@@ -159,5 +207,55 @@ describe("under StrictMode", () => {
     await settle()
 
     expect(calls.detail).toEqual([1, 2])
+  })
+})
+
+describe("rung 2 — TanStack DB", () => {
+  it("opens a ticket without going to the server at all", async () => {
+    const { calls, server } = countingServer()
+    const { rerender } = renderRung(2, server, null)
+    await expectListSize(2)
+
+    rerender(1)
+    await settle()
+
+    // The rows are already local, so a detail view is a query rather than a
+    // request. Rung 1 still paid for the *first* open of each ticket; this
+    // never does.
+    expect(calls.detail).toEqual([])
+    expect(calls.list).toBe(1)
+  })
+
+  it("shows a write immediately, before the server has been told", async () => {
+    const { calls, server } = countingServer()
+    const view = captureView()
+    renderRung(2, server, null, false, view.capture)
+    await expectListSize(2)
+
+    act(() => view.current!.setStatus(1, "done"))
+
+    // No await: the point is that the change is on screen in the same tick, so
+    // the assertion runs before any server round-trip could have finished.
+    expect(view.current!.list.find((t) => t.id === 1)?.status).toBe("done")
+
+    await settle()
+    expect(calls.writes).toBe(1)
+  })
+
+  it("undoes the write by itself when the server rejects it", async () => {
+    const { server } = countingServer({ failWrites: true })
+    const view = captureView()
+    renderRung(2, server, null, false, view.capture)
+    await expectListSize(2)
+
+    const before = view.current!.list.find((t) => t.id === 1)?.status
+    act(() => view.current!.setStatus(1, "done"))
+    expect(view.current!.list.find((t) => t.id === 1)?.status).toBe("done")
+
+    // Nothing in our code puts this back — DB drops the optimistic layer when
+    // the mutation handler throws. This is the moment the whole rung exists for.
+    await vi.waitFor(() =>
+      expect(view.current!.list.find((t) => t.id === 1)?.status).toBe(before)
+    )
   })
 })

@@ -130,9 +130,9 @@ export function useQueryTickets({
   )
 
   const remove = useCallback(
-    (id: number) => {
+    async (id: number) => {
       bus.emit("ui:interaction", `delete #${id}`)
-      removeMutation.mutate(id)
+      await removeMutation.mutateAsync(id)
     },
     [bus, removeMutation]
   )

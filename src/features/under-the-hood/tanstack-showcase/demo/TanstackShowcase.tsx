@@ -5,6 +5,7 @@ import { AppMode } from "../app/AppMode"
 import { TimelinePanel } from "../timeline/TimelinePanel"
 import { SHELL } from "../styles"
 import { Controls } from "./Controls"
+import { RungSwitch, SwitchBlur } from "./RungSwitch"
 import { useTanstackShowcase } from "./useTanstackShowcase"
 
 /**
@@ -24,11 +25,14 @@ export function TanstackShowcase() {
     updateServerConfig,
     rung,
     setRung,
+    displayRung,
+    switchingTo,
     mode,
     setMode,
     selectedId,
     select,
     timeline,
+    clearLog,
     railOffset,
     latestEvent,
     attachFlows,
@@ -51,7 +55,7 @@ export function TanstackShowcase() {
       </ToolIntro>
 
       <Controls
-        rung={rung}
+        rung={displayRung}
         onRung={setRung}
         mode={mode}
         onMode={setMode}
@@ -59,19 +63,30 @@ export function TanstackShowcase() {
         onServerConfig={updateServerConfig}
       />
 
-      <div className={cn(SHELL, "min-h-[34rem]")}>
-        <RungHost rung={rung} server={server} bus={bus} selectedId={selectedId}>
-          {(view) => (
-            <AppMode
-              view={attachFlows(view)}
+      <div className="relative flex min-h-[34rem] flex-1 flex-col">
+        <SwitchBlur active={switchingTo !== null}>
+          <div className={cn(SHELL, "w-full")}>
+            <RungHost
+              rung={rung}
+              server={server}
+              bus={bus}
               selectedId={selectedId}
-              onSelect={select}
-              latestEvent={latestEvent}
-            />
-          )}
-        </RungHost>
+            >
+              {(view) => (
+                <AppMode
+                  view={attachFlows(view)}
+                  selectedId={selectedId}
+                  onSelect={select}
+                  latestEvent={latestEvent}
+                />
+              )}
+            </RungHost>
 
-        <TimelinePanel timeline={timeline} />
+            <TimelinePanel timeline={timeline} onClear={clearLog} />
+          </div>
+        </SwitchBlur>
+
+        <RungSwitch toName={switchingTo} />
       </div>
     </div>
   )

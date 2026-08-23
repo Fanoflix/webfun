@@ -99,6 +99,9 @@ export function useNaiveTickets({
         setReloadToken((t) => t + 1)
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e))
+        // Rethrown so callers can tell a completed write from a refused one —
+        // `remove` needs it to decide whether the selection may move.
+        throw e
       } finally {
         setIsMutating(false)
       }
@@ -109,7 +112,7 @@ export function useNaiveTickets({
   const create = useCallback(
     (title: string, assignee: string) => {
       bus.emit("ui:interaction", "create ticket")
-      void runWrite(() => server.createTicket(title, assignee))
+      void runWrite(() => server.createTicket(title, assignee)).catch(() => {})
     },
     [bus, runWrite, server]
   )
@@ -117,15 +120,15 @@ export function useNaiveTickets({
   const setStatus = useCallback(
     (id: number, status: TicketStatus) => {
       bus.emit("ui:interaction", `status → ${status}`)
-      void runWrite(() => server.setStatus(id, status))
+      void runWrite(() => server.setStatus(id, status)).catch(() => {})
     },
     [bus, runWrite, server]
   )
 
   const remove = useCallback(
-    (id: number) => {
+    async (id: number) => {
       bus.emit("ui:interaction", `delete #${id}`)
-      void runWrite(() => server.deleteTicket(id))
+      await runWrite(() => server.deleteTicket(id))
     },
     [bus, runWrite, server]
   )

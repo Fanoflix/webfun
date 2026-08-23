@@ -22,5 +22,12 @@ export type TicketsView = {
   error: string | null
   create: (title: string, assignee: string) => void
   setStatus: (id: number, status: TicketStatus) => void
-  remove: (id: number) => void
+  /**
+   * Resolves once the server has accepted the delete, rejects if it refuses.
+   *
+   * Awaitable where the others aren't because the caller has a decision to make
+   * on the outcome: the selection may only move off a row once that row is
+   * really gone, or a rejected delete leaves you looking at the wrong ticket.
+   */
+  remove: (id: number) => Promise<void>
 }

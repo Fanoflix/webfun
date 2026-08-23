@@ -12,6 +12,15 @@
  */
 export type RungId = 0 | 1 | 2
 
+/**
+ * How long the reset animation runs when you change rung.
+ *
+ * The new rung is not mounted until this elapses — the point of the pause is
+ * that you watch the *whole* data layer start from cold, so its first fetch has
+ * to happen where you can see it, not behind the blur.
+ */
+export const RUNG_SWITCH_MS = 600
+
 export type Rung = {
   id: RungId
   name: string
@@ -54,7 +63,6 @@ export const RUNGS: Rung[] = [
     gain: "Writes land instantly and roll back if the server says no.",
     blurb:
       "Keeps the data as rows you can search through locally, like a tiny database inside the page. A change shows up everywhere at once, and undoes itself if the server refuses it.",
-    // Phase 3. Proven workable by engine/phase0-spike.test.ts.
-    available: false,
+    available: true,
   },
 ]

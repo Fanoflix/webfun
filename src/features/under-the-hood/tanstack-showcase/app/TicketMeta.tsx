@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { STATUS_COLOR } from "../styles"
 import type { TicketStatus } from "../engine/types"
 
 /**
@@ -9,29 +10,42 @@ import type { TicketStatus } from "../engine/types"
  * never look like two different things in two places.
  */
 
-const STATUS_STYLE: Record<TicketStatus, string> = {
-  open: "text-foreground",
-  "in-progress": "text-primary",
-  done: "text-muted-foreground",
-}
-
-const STATUS_DOT: Record<TicketStatus, string> = {
-  open: "bg-foreground/60",
-  "in-progress": "bg-primary",
-  done: "bg-muted-foreground/40",
+/**
+ * How each status is written. The stored value stays `open` — this is a label
+ * change, not a data change, so nothing in the server or the rungs shifts.
+ */
+export const STATUS_LABEL: Record<TicketStatus, string> = {
+  open: "Todo",
+  "in-progress": "In progress",
+  done: "Done",
 }
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
-  return <Badge className={STATUS_STYLE[status]}>{status}</Badge>
+  return (
+    <Badge
+      style={status === "open" ? undefined : { color: STATUS_COLOR[status] }}
+    >
+      {STATUS_LABEL[status]}
+    </Badge>
+  )
 }
 
 export function StatusDot({ status }: { status: TicketStatus }) {
+  // An empty ring for todo: nothing has been done to it yet, so there's nothing
+  // to fill in. `currentColor` via the foreground keeps it white on dark and
+  // dark on light, rather than a hard-coded white that vanishes in light mode.
+  if (status === "open") {
+    return (
+      <span
+        className="size-2.5 shrink-0 rounded-full border-1 border-foreground/70"
+        aria-hidden
+      />
+    )
+  }
   return (
     <span
-      className={cn(
-        "size-2.5 shrink-0 rounded-full ring-1 ring-black/10 ring-inset dark:ring-white/10",
-        STATUS_DOT[status]
-      )}
+      style={{ backgroundColor: STATUS_COLOR[status] }}
+      className="size-2.5 shrink-0 rounded-full ring-1 ring-black/10 ring-inset dark:ring-white/10"
       aria-hidden
     />
   )

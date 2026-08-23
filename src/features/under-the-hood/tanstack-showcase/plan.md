@@ -1,6 +1,6 @@
 # TanStack showcase — plan
 
-Status: **Phase 1 built + UI pass (2026-08-23).** Phase 2 (Architecture mode) is next.
+Status: **Phases 1 and 3 built (2026-08-23).** The ladder is complete. Phase 2 (Architecture mode) is next, then Phase 4 (Code mode).
 
 ## The idea
 
@@ -56,6 +56,36 @@ orange TTFB bar, the red failure) because the recognition *is* the point; those
 colours appear nowhere else in webfun. Only the waiting phase is drawn: the fake
 server has no transfer phase, and a green "download" segment would be a number
 we don't have.
+
+Every row carries a colour-coded tag naming which library made the move —
+`query` in TanStack Query's red, `db`, `sync`. (The `db` colour is a stand-in:
+`@tanstack/db` ships no brand colour and nothing installed states one.) Worth
+having because the panel deliberately looks like a browser's network tab, where
+every row is the browser's own work — here half of them are a library's.
+
+The log **accumulates** rather than resetting per interaction — comparing two
+clicks is the point, and you can't compare against something that just vanished.
+Each interaction becomes a labelled segment; the log clears when the rung changes
+(a different data layer's numbers aren't comparable) or via the clear button.
+Waterfall bars scale within their own segment, so a fast click beside a slow one
+still shows its own shape.
+
+The log tails at **10 rows**: one falls off the top as one arrives at the bottom,
+and it pins to the newest unless you've scrolled up to read an older interaction.
+The cap is applied when rows are built, not on raw events — a single row is
+assembled from several events (a request and its response at minimum), so
+trimming events would tear rows in half. Scroll pinning reuses
+`hooks/useStickToBottom`, promoted out of concept-chat since both want exactly
+the same "don't yank someone who scrolled up" rule.
+
+Segments are labelled by what caused them, in violet when that was the reader
+and muted grey when it was the app loading itself — a rung switch reads as
+"First load", not as an event of its own, because the switch isn't something the
+app did.
+
+Every row explains itself on hover, anchored left: why this beats the rung below,
+or — at rung 0, where there is no rung below — what the flaw is. That comparison
+is the argument of the whole entry and is invisible if you only look at one rung.
 
 Local events nest under the request they belong to, correlated by an explicit
 `trace` (a query key, or the endpoint) rather than by ordering — with jitter on,
@@ -192,7 +222,29 @@ state chip and a staleness countdown ring, driven by the real timers.
      a free read and then showed the request. Now split into `query:cache:hit`
      (fresh, nothing requested) and `query:cache:stale` (served, revalidating).
 - **Phase 2.** Architecture mode, wired to the same stream.
-- **Phase 3.** Rung 2, optimistic rollback, teammate actor.
+- **Phase 3. ✅ BUILT** (out of order, before Phase 2, on purpose). Rung 2 is a
+  TanStack DB collection fed by rung 1's Query — `queryCollectionOptions`, so the
+  rung *keeps* rung 1's work rather than replacing it.
+
+  Two behaviours carry the rung, and both are pinned by tests:
+  1. **Opening a ticket costs nothing.** The rows are already local, so the
+     detail view is a live query, not a request. Rung 1 still paid for the first
+     open of each ticket; rung 2 never does.
+  2. **Writes are optimistic, and undo themselves.** `collection.update(...)`
+     lands locally in the same tick; if the server rejects, DB drops the
+     optimistic layer on its own. Nothing in our code puts the row back.
+
+  Reordered ahead of Phase 2 because the architecture diagram's most interesting
+  nodes are the DB collection and the sync engine — building it first would have
+  meant drawing boxes that couldn't light up, then revisiting them.
+
+  `db:live:read` is emitted from **DB's own change stream** (`subscribeChanges`
+  on the collection `useLiveQuery` returns), not hand-placed next to the read —
+  the same standard the Query instrumentation holds itself to. Without it, a
+  selection at rung 2 showed an empty panel, which reads as "nothing was
+  recorded" rather than "this cost nothing", and a live query really did run.
+
+  The teammate actor is still outstanding and moves to a later phase.
 - **Phase 4.** Code panel, `how-it-works.md`, reel script.
 
 ## Assumptions

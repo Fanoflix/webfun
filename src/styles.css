@@ -152,7 +152,17 @@
  * toggle, and a hard-coded dark app would look broken in it.
  */
 .showcase-app {
-    --background: oklch(0.985 0 0);
+    /*
+     * Three surfaces, and they have to stay distinct from each other:
+     *   `card`       — the raised inbox column (white)
+     *   `background` — the detail pane behind it, a step down
+     *   `muted`      — comment cards sitting *on* the detail pane, a step down again
+     *
+     * The centre was previously set to the same value as `muted`, which left the
+     * comments painted exactly the colour of the pane behind them — invisible.
+     * Each one is now a rung apart.
+     */
+    --background: oklch(0.978 0 0);
     --foreground: oklch(0.18 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.18 0 0);
@@ -175,9 +185,9 @@
 }
 
 .dark .showcase-app {
-    --background: oklch(0.205 0 0);
+    --background: oklch(0.185 0 0);
     --foreground: oklch(0.97 0 0);
-    --card: oklch(0.225 0 0);
+    --card: oklch(0.245 0 0);
     --card-foreground: oklch(0.97 0 0);
     --popover: oklch(0.225 0 0);
     --popover-foreground: oklch(0.97 0 0);
@@ -201,11 +211,38 @@
  */
 .showcase-app [data-slot="button"],
 .showcase-app [data-slot="toggle"],
-.showcase-app [data-slot="input"],
+.showcase-app [data-slot="input"] {
+    border-radius: var(--radius-md);
+}
+
+/*
+ * Selects stay square. A rounded menu reads as a floating card; these are meant
+ * to feel welded to the row they sit in, the way a real tracker's status and
+ * assignee pickers do.
+ */
 .showcase-app [data-slot="select-trigger"],
 .showcase-app [data-slot="select-content"],
+.showcase-app[data-slot="select-content"],
 .showcase-app [data-slot="select-item"] {
-    border-radius: var(--radius-md);
+    border-radius: 0;
+}
+
+/*
+ * ...and they're opaque.
+ *
+ * The site's shadcn style is configured with `menuColor: default-translucent`,
+ * so menus are `bg-popover/70` over a backdrop blur. That reads well on webfun's
+ * own chrome, but this menu opens over a dense list inside a *different*
+ * product, where see-through is just hard to read. Scoped to the app so the
+ * site's own menus keep the translucency they were designed with.
+ *
+ * Both selectors: the portalled popup carries `showcase-app` on the same element
+ * that has the data-slot, so a descendant selector alone would miss it.
+ */
+.showcase-app [data-slot="select-content"],
+.showcase-app[data-slot="select-content"] {
+    background-color: var(--popover);
+    backdrop-filter: none;
 }
 
 /*

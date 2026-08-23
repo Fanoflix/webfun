@@ -6,7 +6,7 @@ import { useChat } from "./useChat"
 import { useComposer } from "./useComposer"
 import { useFakeChatter } from "./useFakeChatter"
 import { useNow } from "./useNow"
-import { useStickToBottom } from "./useStickToBottom"
+import { useStickToBottom } from "@/hooks/useStickToBottom"
 import { useTimelineComposer } from "./useTimelineComposer"
 import type { Author, Message, Segment, ThreadItem } from "./types"
 
