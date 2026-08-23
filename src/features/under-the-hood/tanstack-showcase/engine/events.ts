@@ -31,7 +31,7 @@ const EVENT_META: Record<EventKind, { node: NodeId; label: string }> = {
 export type EventBus = {
   /** Open a new flow. Whatever the previous flow collected is replaced. */
   beginFlow: (label: string) => void
-  emit: (kind: EventKind, detail?: string) => void
+  emit: (kind: EventKind, detail?: string, trace?: string) => void
   subscribe: (listener: () => void) => () => void
   /** Stable snapshot — safe as a `useSyncExternalStore` getSnapshot. */
   getFlow: () => Flow | null
@@ -58,7 +58,7 @@ export function createEventBus(now: () => number = () => Date.now()): EventBus {
       notify()
     },
 
-    emit(kind, detail) {
+    emit(kind, detail, trace) {
       // An event with no flow to belong to is dropped rather than opening one
       // implicitly: background noise would otherwise land at the head of the
       // timeline and read as though the user had caused it.
@@ -70,6 +70,7 @@ export function createEventBus(now: () => number = () => Date.now()): EventBus {
         node: meta.node,
         label: meta.label,
         detail,
+        trace,
         at: now() - flow.startedAt,
       }
       flow = { ...flow, events: [...flow.events, event] }

@@ -1,7 +1,9 @@
 import { IntroLink, ToolIntro } from "@/components/layout/ToolIntro"
+import { cn } from "@/lib/utils"
 import { RungHost } from "../rungs/RungHost"
 import { AppMode } from "../app/AppMode"
 import { TimelinePanel } from "../timeline/TimelinePanel"
+import { SHELL } from "../styles"
 import { Controls } from "./Controls"
 import { useTanstackShowcase } from "./useTanstackShowcase"
 
@@ -9,6 +11,10 @@ import { useTanstackShowcase } from "./useTanstackShowcase"
  * The showcase page. View only — everything stateful lives in
  * `useTanstackShowcase`, and the ticket data belongs to whichever rung
  * `RungHost` has mounted.
+ *
+ * Laid out full-bleed rather than centred like the other tools: this one is an
+ * app beside its devtools, and both want room. `self-stretch` opts out of the
+ * shared layout's vertical centring so the panels can fill the viewport.
  */
 export function TanstackShowcase() {
   const {
@@ -23,13 +29,20 @@ export function TanstackShowcase() {
     selectedId,
     select,
     timeline,
+    railOffset,
     latestEvent,
     attachFlows,
   } = useTanstackShowcase()
 
   return (
-    <div className="w-full max-w-5xl space-y-4">
-      <ToolIntro title="TanStack, with the lid off">
+    <div
+      className={cn(
+        "mx-auto flex h-full w-full max-w-[2240px] flex-col gap-4 self-stretch transition-[padding] duration-200",
+        // The shared layout's own p-6 already covers part of the track.
+        railOffset && "lg:pl-[calc(var(--sidebar-width)-1.5rem)]"
+      )}
+    >
+      <ToolIntro title="TanStack, with the lid off" className="shrink-0">
         The same ticket app, built three ways. Step up the ladder and watch what
         stops happening — the requests, the spinners, the hand-written
         bookkeeping. Everything on the right is real:{" "}
@@ -46,24 +59,17 @@ export function TanstackShowcase() {
         onServerConfig={updateServerConfig}
       />
 
-      <div className="flex flex-col gap-4 md:h-[28rem] md:flex-row">
-        <div className="min-h-0 min-w-0 flex-1 border border-border">
-          <RungHost
-            rung={rung}
-            server={server}
-            bus={bus}
-            selectedId={selectedId}
-          >
-            {(view) => (
-              <AppMode
-                view={attachFlows(view)}
-                selectedId={selectedId}
-                onSelect={select}
-                latestEvent={latestEvent}
-              />
-            )}
-          </RungHost>
-        </div>
+      <div className={cn(SHELL, "min-h-[34rem]")}>
+        <RungHost rung={rung} server={server} bus={bus} selectedId={selectedId}>
+          {(view) => (
+            <AppMode
+              view={attachFlows(view)}
+              selectedId={selectedId}
+              onSelect={select}
+              latestEvent={latestEvent}
+            />
+          )}
+        </RungHost>
 
         <TimelinePanel timeline={timeline} />
       </div>

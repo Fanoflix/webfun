@@ -34,6 +34,7 @@ export function useQueryInstrumentation(bus: EventBus) {
           if (event.query.state.data === undefined) break
           bus.emit(
             event.query.isStale() ? "query:cache:stale" : "query:cache:hit",
+            key,
             key
           )
           break
@@ -41,16 +42,16 @@ export function useQueryInstrumentation(bus: EventBus) {
         case "updated": {
           switch (event.action.type) {
             case "fetch":
-              bus.emit("query:fetch:start", key)
+              bus.emit("query:fetch:start", key, key)
               break
             case "success":
-              bus.emit("query:cache:write", key)
+              bus.emit("query:cache:write", key, key)
               break
             case "error":
-              bus.emit("query:error", key)
+              bus.emit("query:error", key, key)
               break
             case "invalidate":
-              bus.emit("query:invalidate", key)
+              bus.emit("query:invalidate", key, key)
               break
           }
           break

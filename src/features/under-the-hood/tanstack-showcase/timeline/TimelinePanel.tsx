@@ -1,81 +1,174 @@
 import { AnimatePresence, motion } from "motion/react"
 
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { resolveEase } from "@/features/motion/eases"
 import { cn } from "@/lib/utils"
-import type { Timeline } from "./useTimeline"
-
-/** Which box in the system an event happened at. */
-const NODE_ACCENT: Record<string, string> = {
-  ui: "bg-foreground",
-  query: "bg-primary",
-  db: "bg-primary",
-  sync: "bg-muted-foreground",
-  server: "bg-muted-foreground",
-}
+import {
+  COLUMN_LABEL,
+  MONO,
+  NET_GRID,
+  NETWORK,
+  PANEL,
+  PANEL_HEADER,
+} from "../styles"
+import type { ChildRow, RowStatus, Timeline, TimelineRow } from "./useTimeline"
 
 /**
- * The flow of everything one interaction caused, newest at the bottom.
- *
- * Always on screen, whichever mode you're in — it's the through-line that makes
- * the modes feel like views of one system rather than separate pages.
+ * The teaching half: what the last interaction actually cost, laid out like the
+ * Network panel people already read every day. Sits on the right the way
+ * devtools do, and stays put across every mode.
  */
 export function TimelinePanel({ timeline }: { timeline: Timeline }) {
   return (
-    <aside className="flex h-full w-full flex-col border border-border md:w-64">
-      <header className="border-b border-border px-3 py-2">
-        <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-          Timeline
-        </p>
-        <p className="mt-0.5 truncate text-sm">{timeline.title}</p>
-      </header>
-
-      <div className="min-h-0 flex-1 overflow-auto p-2">
-        {timeline.isEmpty ? (
-          <p className="px-1 py-2 text-xs text-muted-foreground">
-            Click a ticket, or add one, to see what happens underneath.
-          </p>
-        ) : (
-          <ol className="space-y-0.5">
-            <AnimatePresence initial={false}>
-              {timeline.rows.map((row) => (
-                <motion.li
-                  key={row.id}
-                  layout
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.2, ease: resolveEase("smooth") }}
-                  className="flex items-baseline gap-2 px-1 py-1"
-                >
-                  <span
-                    className={cn(
-                      "size-1.5 shrink-0 translate-y-[-1px]",
-                      NODE_ACCENT[row.node] ?? "bg-muted-foreground"
-                    )}
-                    aria-hidden
-                  />
-                  <span className="flex-1 text-xs leading-snug">
-                    {row.label}
-                    {row.detail && (
-                      <span className="ml-1 block font-mono text-[10px] text-muted-foreground">
-                        {row.detail}
-                      </span>
-                    )}
-                  </span>
-                  <span className="shrink-0 font-mono text-[10px] text-muted-foreground tabular-nums">
-                    {row.offset}
-                  </span>
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </ol>
-        )}
-      </div>
-
-      <footer className="border-t border-border px-3 py-1.5 text-right">
-        <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+    <aside
+      className={cn(
+        PANEL,
+        "showcase-devtools w-full border-t border-border lg:w-[26rem] lg:shrink-0 lg:border-t-0 lg:border-l"
+      )}
+    >
+      <header className={PANEL_HEADER}>
+        <div className="min-w-0">
+          <p className={COLUMN_LABEL}>Network</p>
+          <p className="truncate text-sm">{timeline.title}</p>
+        </div>
+        <span className={cn(MONO, "shrink-0 text-muted-foreground")}>
           {timeline.duration}
         </span>
-      </footer>
+      </header>
+
+      <div
+        className={cn(
+          NET_GRID,
+          COLUMN_LABEL,
+          "shrink-0 border-b border-border px-3 py-1.5"
+        )}
+      >
+        <span>Name</span>
+        <span className="text-right">Status</span>
+        <span className="w-12 text-right">Time</span>
+      </div>
+
+      <ScrollArea className="min-h-0 flex-1">
+        {timeline.isEmpty ? (
+          <p className="px-3 py-3 text-xs text-muted-foreground">
+            Click a ticket, or add one, to see what it costs.
+          </p>
+        ) : (
+          <ul>
+            <AnimatePresence initial={false}>
+              {timeline.rows.map((row) => (
+                <NetworkRow key={row.id} row={row} />
+              ))}
+            </AnimatePresence>
+          </ul>
+        )}
+      </ScrollArea>
     </aside>
+  )
+}
+
+function NetworkRow({ row }: { row: TimelineRow }) {
+  const failed = row.status.kind === "failed"
+
+  return (
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18, ease: resolveEase("smooth") }}
+      className="border-b border-border/60 px-3 py-1.5 hover:bg-accent/40"
+    >
+      <div className={NET_GRID}>
+        <span
+          className={cn(
+            MONO,
+            "truncate",
+            row.status.kind === "local" && "text-muted-foreground"
+          )}
+          title={row.name}
+        >
+          {row.name}
+        </span>
+        <StatusCell status={row.status} />
+        <span
+          className={cn(
+            MONO,
+            "w-12 text-right",
+            failed ? "text-[var(--net-error)]" : "text-muted-foreground"
+          )}
+          style={{ ["--net-error" as string]: NETWORK.error }}
+        >
+          {row.time}
+        </span>
+      </div>
+
+      {/* The waterfall: a hairline rather than a column, so the panel stays
+          narrow enough to read while overlap is still visible. */}
+      {row.bar && (
+        <div className="mt-1 h-[2px] w-full bg-border/50">
+          <div
+            className="h-full"
+            style={{
+              marginLeft: `${row.bar.left * 100}%`,
+              width: `${Math.max(row.bar.width * 100, 1.5)}%`,
+              backgroundColor: failed ? NETWORK.error : NETWORK.waiting,
+            }}
+          />
+        </div>
+      )}
+
+      {row.children.length > 0 && (
+        <ul className="mt-1 ml-1 border-l border-border pl-2.5">
+          {row.children.map((child) => (
+            <ChildLine key={child.id} child={child} />
+          ))}
+        </ul>
+      )}
+    </motion.li>
+  )
+}
+
+function StatusCell({ status }: { status: RowStatus }) {
+  if (status.kind === "pending") {
+    return <span className={cn(MONO, "text-muted-foreground/60")}>pending</span>
+  }
+  if (status.kind === "local") {
+    // Chrome's own idiom for "this didn't cost a request": a parenthesised
+    // note where the status code would be.
+    return (
+      <span className={cn(MONO, "text-muted-foreground")}>
+        ({status.label})
+      </span>
+    )
+  }
+  const failed = status.kind === "failed"
+  return (
+    <span
+      className={MONO}
+      style={failed ? { color: NETWORK.error } : undefined}
+    >
+      {status.code}
+    </span>
+  )
+}
+
+const CHILD_TONE_CLASS: Record<ChildRow["tone"], string> = {
+  cache: "text-muted-foreground",
+  write: "text-muted-foreground",
+  invalidate: "text-foreground/70",
+  error: "",
+}
+
+function ChildLine({ child }: { child: ChildRow }) {
+  return (
+    <li
+      className={cn(
+        "flex items-baseline gap-2 py-0.5 text-[11px]",
+        CHILD_TONE_CLASS[child.tone]
+      )}
+      style={child.tone === "error" ? { color: NETWORK.error } : undefined}
+    >
+      <span className="truncate">{child.label}</span>
+    </li>
   )
 }

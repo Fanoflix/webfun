@@ -1,3 +1,7 @@
+import { LifeBuoy } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { COLUMN_LABEL, PANEL, PANEL_HEADER } from "../styles"
 import type { TicketsView } from "../rungs/contract"
 import type { ShowcaseEvent } from "../engine/types"
 import { Composer } from "./Composer"
@@ -5,7 +9,17 @@ import { HintBubble } from "./HintBubble"
 import { TicketDetail } from "./TicketDetail"
 import { TicketList } from "./TicketList"
 
-/** App mode: the product itself, with a hint bubble narrating what just happened. */
+/**
+ * App mode: the product, dressed as a product.
+ *
+ * It reads as its own application window — its own header, its own inbox
+ * column, its own detail pane — precisely so it doesn't blur into the teaching
+ * apparatus around it. The `showcase-app` class swaps the shadcn tokens for a
+ * neutral grey palette with a white primary and rounded controls, so everything
+ * underneath stops looking like webfun without a single per-component override.
+ *
+ * The only tell that anything unusual is going on is the hint bubble.
+ */
 export function AppMode({
   view,
   selectedId,
@@ -18,27 +32,42 @@ export function AppMode({
   latestEvent: ShowcaseEvent | undefined
 }) {
   return (
-    <div className="relative flex h-full flex-col gap-3 p-3">
-      <HintBubble event={latestEvent} />
-
-      <Composer onCreate={view.create} isMutating={view.isMutating} />
-
-      {view.error && (
-        <p className="border border-destructive/50 px-2 py-1 text-xs text-destructive">
-          {view.error}
-        </p>
-      )}
-
-      <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-[1.2fr_1fr]">
-        <div className="min-h-0 overflow-auto">
-          <TicketList
-            tickets={view.list}
-            state={view.listState}
-            selectedId={selectedId}
-            onSelect={onSelect}
-          />
+    <section className={cn(PANEL, "showcase-app relative min-w-0 flex-1")}>
+      <header className={PANEL_HEADER}>
+        <div className="flex items-center gap-2">
+          <span className="grid size-5 place-items-center rounded bg-primary text-primary-foreground">
+            <LifeBuoy className="size-3" />
+          </span>
+          <span className="text-sm font-semibold tracking-tight">
+            Fake Application
+          </span>
+          <span className={cn(COLUMN_LABEL, "hidden sm:block")}>
+            support inbox
+          </span>
         </div>
-        <div className="min-h-0 overflow-auto border border-border">
+        {view.error && (
+          <span className="truncate text-xs text-destructive">
+            {view.error}
+          </span>
+        )}
+      </header>
+
+      <div className="flex min-h-0 flex-1">
+        <div className="flex w-[19rem] shrink-0 flex-col border-r border-border">
+          <div className="shrink-0 border-b border-border px-2 py-1.5">
+            <Composer onCreate={view.create} isMutating={view.isMutating} />
+          </div>
+          <div className="min-h-0 flex-1">
+            <TicketList
+              tickets={view.list}
+              state={view.listState}
+              selectedId={selectedId}
+              onSelect={onSelect}
+            />
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1">
           <TicketDetail
             ticket={view.detail}
             state={view.detailState}
@@ -48,6 +77,8 @@ export function AppMode({
           />
         </div>
       </div>
-    </div>
+
+      <HintBubble event={latestEvent} />
+    </section>
   )
 }

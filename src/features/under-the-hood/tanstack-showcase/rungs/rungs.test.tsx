@@ -9,8 +9,8 @@ import type { Ticket } from "../engine/types"
 import { RungHost } from "./RungHost"
 
 const TICKETS: Ticket[] = [
-  { id: 1, title: "One", status: "open", assignee: "sam" },
-  { id: 2, title: "Two", status: "done", assignee: "ada" },
+  { id: 1, title: "One", status: "open", assignee: "sam", body: "first" },
+  { id: 2, title: "Two", status: "done", assignee: "ada", body: "second" },
 ]
 
 /** A server that answers instantly and counts what it was asked. */

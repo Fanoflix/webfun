@@ -1,6 +1,6 @@
 # TanStack showcase — plan
 
-Status: **Phase 1 built (2026-08-23).** Phase 2 (Architecture mode) is next.
+Status: **Phase 1 built + UI pass (2026-08-23).** Phase 2 (Architecture mode) is next.
 
 ## The idea
 
@@ -34,6 +34,34 @@ flow of events for the last interaction.
    attributable, and filming is reproducible.
 7. **Deps pinned exactly, never `latest`.** Floating `@tanstack/*` pins under
    Yarn PnP are what caused this project's unresolved-import overlay before.
+
+## Layout and look
+
+Full-bleed, capped at `2240px` and centred beyond that. The app sits left as its
+own window — its own header, inbox column and detail pane — so it reads as a
+product rather than blurring into the teaching apparatus. The timeline sits
+right, where devtools live.
+
+The site's sidebar *floats over* content instead of pushing it, which every
+other tool gets away with because they're centred and narrow. This page reserves
+the rail's track itself (`railOffset`) or the app window hides underneath it.
+
+Shared class strings live in `styles.ts`; anything used twice goes there or
+becomes a component (`TicketMeta.tsx`), never a retyped string.
+
+The timeline is modelled on Chrome's Network panel — Name / Status / Time, with
+the waterfall as a hairline under each row rather than a fourth column, so the
+narrow panel stays readable. Chrome's literal palette is used for it (the
+orange TTFB bar, the red failure) because the recognition *is* the point; those
+colours appear nowhere else in webfun. Only the waiting phase is drawn: the fake
+server has no transfer phase, and a green "download" segment would be a number
+we don't have.
+
+Local events nest under the request they belong to, correlated by an explicit
+`trace` (a query key, or the endpoint) rather than by ordering — with jitter on,
+responses land out of order and an ordering heuristic would mis-attribute them.
+Events with no request of their own get a Chrome-style pseudo-status:
+`(from cache)`, `(invalidated)`.
 
 ## The ladder
 

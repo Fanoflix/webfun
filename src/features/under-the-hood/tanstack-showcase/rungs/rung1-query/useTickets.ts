@@ -20,6 +20,24 @@ const ticketKeys = {
   detail: (id: number) => ["tickets", "detail", id] as const,
 }
 
+/**
+ * The string form of a key, used as the correlation id on events. Matches what
+ * the cache subscription reports, so a request and the cache write that follows
+ * it line up in the timeline.
+ */
+const traceOf = (key: readonly unknown[]) => JSON.stringify(key)
+
+/**
+ * Where the detail observer parks when nothing is selected.
+ *
+ * `enabled` stops it fetching, but the observer still registers a query under
+ * whatever key it was given — so a placeholder like `detail(-1)` would sit in
+ * the cache under the `tickets` prefix and turn up in every invalidation
+ * cascade. Parking it outside that prefix keeps the cache honest: there is no
+ * ticket query when there is no ticket.
+ */
+const IDLE_DETAIL_KEY = ["no-ticket-selected"] as const
+
 const toLoadState = (
   status: "pending" | "error" | "success",
   enabled = true
@@ -52,15 +70,17 @@ export function useQueryTickets({
   // @beat query:cache:hit
   const listQuery = useQuery({
     queryKey: ticketKeys.list(),
-    queryFn: () => server.listTickets(),
+    queryFn: () => server.listTickets(traceOf(ticketKeys.list())),
     staleTime: STALE_TIME,
   })
 
   // Declared unconditionally even when nothing is selected — `enabled` is what
   // turns it off, so the hook order never changes.
   const detailQuery = useQuery({
-    queryKey: ticketKeys.detail(selectedId ?? -1),
-    queryFn: () => server.getTicket(selectedId!),
+    queryKey:
+      selectedId === null ? IDLE_DETAIL_KEY : ticketKeys.detail(selectedId),
+    queryFn: () =>
+      server.getTicket(selectedId!, traceOf(ticketKeys.detail(selectedId!))),
     enabled: selectedId !== null,
     staleTime: STALE_TIME,
   })

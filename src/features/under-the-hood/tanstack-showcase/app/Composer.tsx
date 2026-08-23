@@ -1,10 +1,19 @@
+import { Plus } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useComposer } from "./useComposer"
 
 const ASSIGNEES = ["sam", "ada", "kit"]
 
-/** New-ticket row. View only — state lives in `useComposer`. */
+/** New-ticket row at the top of the inbox. View only. */
 export function Composer({
   onCreate,
   isMutating,
@@ -17,7 +26,7 @@ export function Composer({
 
   return (
     <form
-      className="flex gap-2"
+      className="flex items-center gap-1.5"
       onSubmit={(e) => {
         e.preventDefault()
         submit()
@@ -26,22 +35,33 @@ export function Composer({
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="New ticket…"
-        className="h-8 flex-1 text-sm"
+        placeholder="Report an issue…"
+        className="h-8 flex-1 border-0 bg-transparent text-sm shadow-none focus-visible:ring-0"
       />
-      <select
+      <Select
         value={assignee}
-        onChange={(e) => setAssignee(e.target.value)}
-        className="h-8 border border-input bg-background px-2 font-mono text-xs"
+        onValueChange={(value) => setAssignee(value ?? assignee)}
       >
-        {ASSIGNEES.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
-      <Button type="submit" size="sm" disabled={!canSubmit || isMutating}>
-        Add
+        <SelectTrigger size="sm" className="w-20 text-xs" aria-label="Assignee">
+          <SelectValue>{assignee}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {ASSIGNEES.map((name) => (
+            <SelectItem key={name} value={name} className="text-xs">
+              {name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        type="submit"
+        size="icon"
+        variant="ghost"
+        className="size-8"
+        disabled={!canSubmit || isMutating}
+        aria-label="Add ticket"
+      >
+        <Plus className="size-4" />
       </Button>
     </form>
   )

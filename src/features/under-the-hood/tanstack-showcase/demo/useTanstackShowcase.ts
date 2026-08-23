@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react"
 
+import { useSidebar } from "@/components/ui/sidebar"
+
 import { createEventBus } from "../engine/events"
 import { createServer, DEFAULT_SERVER_CONFIG } from "../engine/server"
 import type { ServerConfig } from "../engine/server"
@@ -41,13 +43,26 @@ export function useTanstackShowcase() {
   const flow = useEventStream(bus)
   const timeline = useTimeline(flow)
 
+  /**
+   * The site's sidebar *floats over* content rather than pushing it (the shared
+   * layout zeroes the reserved gap on purpose). Every other tool is centred and
+   * narrow, so it never notices. This page is full-bleed, so it has to reserve
+   * the rail's track itself or the app window hides underneath it.
+   */
+  const { state, isMobile } = useSidebar()
+  const railOffset = !isMobile && state === "expanded"
+
   const select = useCallback(
     (id: number) => {
+      // Re-clicking the ticket that's already open changes nothing, so it must
+      // not wipe the timeline — the flow that's showing is still the one that
+      // explains what's on screen.
+      if (id === selectedId) return
       bus.beginFlow(`Open ticket #${id}`)
       bus.emit("ui:interaction", `selected #${id}`)
       setSelectedId(id)
     },
-    [bus]
+    [bus, selectedId]
   )
 
   const setRung = useCallback(
@@ -111,6 +126,7 @@ export function useTanstackShowcase() {
     select,
     flow,
     timeline,
+    railOffset,
     latestEvent: flow?.events.at(-1),
     attachFlows,
   }

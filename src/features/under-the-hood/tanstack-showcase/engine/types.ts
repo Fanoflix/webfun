@@ -15,6 +15,8 @@ export type Ticket = {
   title: string
   status: TicketStatus
   assignee: string
+  /** One-line description, so the detail pane has something real to show. */
+  body: string
 }
 
 /**
@@ -56,6 +58,15 @@ export type ShowcaseEvent = {
   detail?: string
   /** Milliseconds since the flow began, so the timeline can show the shape. */
   at: number
+  /**
+   * What this event is *about* — a query key, or the endpoint being called.
+   *
+   * This is the correlation id that lets the timeline nest a cache write under
+   * the request that produced it. Without it the timeline is a flat log and you
+   * have to infer cause and effect from ordering, which stops being reliable the
+   * moment two requests overlap.
+   */
+  trace?: string
 }
 
 /**

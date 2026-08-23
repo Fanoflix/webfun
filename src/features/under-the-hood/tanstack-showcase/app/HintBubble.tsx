@@ -8,12 +8,13 @@ import type { ShowcaseEvent } from "../engine/types"
  * the UI that caused it. Same stream the timeline reads — this one just shows
  * the head of it, so the two can never disagree.
  *
- * Anchored bottom-right: the top of the pane is where the composer and the
- * detail heading live, and a bubble there covered the Add button.
+ * Anchored above the detail pane's action bar. Top-right collided with the
+ * composer and the status badge; flat bottom-right covered the Delete button.
+ * This is the one corner of the window with nothing in it.
  */
 export function HintBubble({ event }: { event: ShowcaseEvent | undefined }) {
   return (
-    <div className="pointer-events-none absolute right-3 bottom-3 z-10">
+    <div className="pointer-events-none absolute right-3 bottom-[4.5rem] z-10">
       <AnimatePresence mode="popLayout">
         {event && (
           <motion.div
