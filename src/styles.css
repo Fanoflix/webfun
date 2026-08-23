@@ -139,3 +139,93 @@
     @apply font-sans;
     }
 }
+/*
+ * Scoped palettes for the TanStack showcase.
+ *
+ * The demo app inside that tool has to read as *someone else's product*, not as
+ * part of webfun — otherwise the app and the teaching apparatus around it blur
+ * into one surface. So it gets its own neutral-grey theme with a white primary,
+ * declared by redefining the same shadcn tokens inside a scope. Every component
+ * underneath picks it up with no per-component overrides.
+ *
+ * Both themes are defined, not just the dark one: the site has a working light
+ * toggle, and a hard-coded dark app would look broken in it.
+ */
+.showcase-app {
+    --background: oklch(0.985 0 0);
+    --foreground: oklch(0.18 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.18 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.18 0 0);
+    /* Primary is near-black on light so a filled control still reads as filled;
+       the "white primary" the dark theme wants is defined below. */
+    --primary: oklch(0.22 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.955 0 0);
+    --secondary-foreground: oklch(0.22 0 0);
+    --muted: oklch(0.955 0 0);
+    --muted-foreground: oklch(0.48 0 0);
+    --accent: oklch(0.94 0 0);
+    --accent-foreground: oklch(0.18 0 0);
+    --border: oklch(0.9 0 0);
+    --input: oklch(0.9 0 0);
+    --ring: oklch(0.6 0 0);
+    --radius: 0.375rem;
+}
+
+.dark .showcase-app {
+    --background: oklch(0.205 0 0);
+    --foreground: oklch(0.97 0 0);
+    --card: oklch(0.225 0 0);
+    --card-foreground: oklch(0.97 0 0);
+    --popover: oklch(0.225 0 0);
+    --popover-foreground: oklch(0.97 0 0);
+    --primary: oklch(0.97 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.27 0 0);
+    --secondary-foreground: oklch(0.97 0 0);
+    --muted: oklch(0.27 0 0);
+    --muted-foreground: oklch(0.68 0 0);
+    --accent: oklch(0.29 0 0);
+    --accent-foreground: oklch(0.97 0 0);
+    --border: oklch(0.31 0 0);
+    --input: oklch(0.31 0 0);
+    --ring: oklch(0.55 0 0);
+}
+
+/*
+ * The shadcn "base-sera" style hard-codes `rounded-none` on its controls, so
+ * `--radius` alone can't soften them. The app wants rounded controls, so its
+ * scope restates the radius on the slots that opted out.
+ */
+.showcase-app [data-slot="button"],
+.showcase-app [data-slot="toggle"],
+.showcase-app [data-slot="input"],
+.showcase-app [data-slot="select-trigger"],
+.showcase-app [data-slot="select-content"],
+.showcase-app [data-slot="select-item"] {
+    border-radius: var(--radius-md);
+}
+
+/*
+ * The network panel, docked to the app like devtools: a shade darker than
+ * whatever it sits beside, so the two read as separate tools sharing an edge.
+ */
+.showcase-devtools {
+    --background: oklch(0.94 0 0);
+    --card: oklch(0.94 0 0);
+    --foreground: oklch(0.2 0 0);
+    --muted-foreground: oklch(0.47 0 0);
+    --accent: oklch(0.9 0 0);
+    --border: oklch(0.86 0 0);
+}
+
+.dark .showcase-devtools {
+    --background: oklch(0.165 0 0);
+    --card: oklch(0.165 0 0);
+    --foreground: oklch(0.95 0 0);
+    --muted-foreground: oklch(0.62 0 0);
+    --accent: oklch(0.23 0 0);
+    --border: oklch(0.27 0 0);
+}

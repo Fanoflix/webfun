@@ -5,6 +5,7 @@ import {
   MonitorPlay,
   Spline,
   Sparkles,
+  Layers,
   Table2,
   Type,
 } from "lucide-react"
@@ -190,6 +191,31 @@ export const navGroups: NavGroup[] = [
           "timed message",
           "playback",
           "future ui",
+        ],
+      },
+    ],
+  },
+  {
+    label: "Under the hood",
+    items: [
+      {
+        title: "TanStack, lid off",
+        to: "/tanstack-showcase",
+        tool: "tanstack-showcase",
+        blurb:
+          "The same app built three ways. Step up the ladder and watch the requests, spinners and bookkeeping disappear.",
+        icon: Layers,
+        keywords: [
+          "tanstack",
+          "react query",
+          "tanstack db",
+          "cache",
+          "stale time",
+          "invalidation",
+          "optimistic update",
+          "rollback",
+          "data fetching",
+          "state management",
         ],
       },
     ],
