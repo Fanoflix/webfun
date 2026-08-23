@@ -45,7 +45,7 @@ export function TicketList({
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.22, ease: resolveEase("smooth") }}
-                className="flex flex-col justify-end overflow-hidden border-b border-border/60"
+                className="m-1.25 flex flex-col justify-end overflow-hidden rounded-md bg-popover"
               >
                 <button
                   type="button"

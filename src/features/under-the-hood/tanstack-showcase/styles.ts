@@ -20,9 +20,16 @@ export const SHELL =
 /** One half of the shell. No border or radius of its own — the shell owns those. */
 export const PANEL = "flex min-h-0 flex-col bg-background"
 
-/** The bar across the top of a panel. */
+/**
+ * The bar across the top of a panel.
+ *
+ * A fixed height rather than vertical padding: the app's header holds text and
+ * the network panel's holds an icon button, so padding alone left them a few
+ * pixels apart and drifting with whatever gets added to either. Pinning it means
+ * the two headers line up across the seam no matter what they end up containing.
+ */
 export const PANEL_HEADER =
-  "flex shrink-0 items-center justify-between gap-3 border-b border-border px-3 py-2"
+  "flex h-10 shrink-0 items-center justify-between gap-3 border-b border-border px-3"
 
 /** Small caps label, used for column headers and panel titles. */
 export const COLUMN_LABEL =
