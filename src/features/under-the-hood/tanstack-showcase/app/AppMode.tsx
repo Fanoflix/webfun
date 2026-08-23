@@ -5,7 +5,7 @@ import { COLUMN_LABEL, PANEL, PANEL_HEADER } from "../styles"
 import type { TicketsView } from "../rungs/contract"
 import type { ShowcaseEvent } from "../engine/types"
 import { Composer } from "./Composer"
-import { HintBubble } from "./HintBubble"
+import { AppStatus } from "./AppStatus"
 import { TicketDetail } from "./TicketDetail"
 import { TicketList } from "./TicketList"
 
@@ -32,7 +32,7 @@ export function AppMode({
   latestEvent: ShowcaseEvent | undefined
 }) {
   return (
-    <section className={cn(PANEL, "showcase-app relative min-w-0 flex-1")}>
+    <section className={cn(PANEL, "showcase-app min-w-0 flex-1")}>
       <header className={PANEL_HEADER}>
         <div className="flex items-center gap-2">
           <span className="grid size-5 place-items-center rounded bg-primary text-primary-foreground">
@@ -45,11 +45,7 @@ export function AppMode({
             support inbox
           </span>
         </div>
-        {view.error && (
-          <span className="truncate text-xs text-destructive">
-            {view.error}
-          </span>
-        )}
+        <AppStatus event={latestEvent} error={view.error} />
       </header>
 
       <div className="flex min-h-0 flex-1">
@@ -80,8 +76,6 @@ export function AppMode({
           />
         </div>
       </div>
-
-      <HintBubble event={latestEvent} />
     </section>
   )
 }

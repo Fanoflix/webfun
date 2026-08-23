@@ -138,7 +138,10 @@ export function TicketDetail({
                 >
                   <Trash2 className="size-4" />
                 </TooltipTrigger>
-                <TooltipContent side="left">Delete ticket</TooltipContent>
+                {/* Above, not beside: to the left is the status dropdown and
+                    the ticket title, so a left-anchored tooltip lands on top of
+                    the content it's meant to annotate. */}
+                <TooltipContent side="top">Delete ticket</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

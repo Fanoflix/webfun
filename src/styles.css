@@ -152,11 +152,17 @@
  * toggle, and a hard-coded dark app would look broken in it.
  */
 .showcase-app {
-    /* `background` is the app's canvas (its detail pane) and `card` is the
-       raised inbox beside it. The gap between them is deliberately wider than
-       the site's, because a 1-2% difference in lightness reads as no difference
-       at all — the centre has to be visibly recessed. */
-    --background: oklch(0.955 0 0);
+    /*
+     * Three surfaces, and they have to stay distinct from each other:
+     *   `card`       — the raised inbox column (white)
+     *   `background` — the detail pane behind it, a step down
+     *   `muted`      — comment cards sitting *on* the detail pane, a step down again
+     *
+     * The centre was previously set to the same value as `muted`, which left the
+     * comments painted exactly the colour of the pane behind them — invisible.
+     * Each one is now a rung apart.
+     */
+    --background: oklch(0.978 0 0);
     --foreground: oklch(0.18 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.18 0 0);

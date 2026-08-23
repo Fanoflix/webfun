@@ -31,7 +31,7 @@ export function TicketComments({ comments }: { comments: Comment[] }) {
         {comments.map((comment) => (
           <li
             key={comment.id}
-            className="flex gap-2 rounded-md border border-border bg-muted/35 p-2"
+            className="flex gap-2 rounded-md border border-border/45 bg-muted/35 p-2"
           >
             <AssigneeAvatar name={comment.author} className="mt-0.5 size-6" />
             <div className="min-w-0 flex-1 space-y-1">
