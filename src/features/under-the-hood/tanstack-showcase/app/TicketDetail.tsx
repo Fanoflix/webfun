@@ -2,6 +2,12 @@ import { Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -114,17 +120,27 @@ export function TicketDetail({
               </SelectContent>
             </Select>
 
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-8 text-muted-foreground hover:text-destructive"
-              disabled={isMutating}
-              onClick={() => onDelete(ticket.id)}
-              aria-label="Delete ticket"
-              title="Delete ticket"
-            >
-              <Trash2 className="size-4" />
-            </Button>
+            {/* A real tooltip rather than the native `title`, whose delay is
+                the operating system's and can't be turned off. */}
+            <TooltipProvider delay={0}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 text-muted-foreground hover:text-destructive"
+                      disabled={isMutating}
+                      onClick={() => onDelete(ticket.id)}
+                      aria-label="Delete ticket"
+                    />
+                  }
+                >
+                  <Trash2 className="size-4" />
+                </TooltipTrigger>
+                <TooltipContent side="left">Delete ticket</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 

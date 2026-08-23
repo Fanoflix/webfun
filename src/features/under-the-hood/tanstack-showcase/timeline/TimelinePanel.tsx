@@ -21,8 +21,10 @@ import {
   NETWORK,
   PANEL,
   PANEL_HEADER,
+  ROW_HOVER,
 } from "../styles"
 import type { NodeId } from "../engine/types"
+import { HintText } from "../HintText"
 import type {
   ChildRow,
   RowStatus,
@@ -53,7 +55,9 @@ export function TimelinePanel({
   const scroll = useStickToBottom([timeline.segments])
 
   return (
-    <TooltipProvider delay={250}>
+    // Instant: these are annotations on what you're already looking at, and a
+    // delay turns "hover to understand a row" into a guessing game.
+    <TooltipProvider delay={0}>
       <aside
         className={cn(
           PANEL,
@@ -186,7 +190,7 @@ function Hint({
     <Tooltip>
       <TooltipTrigger render={<div />}>{children}</TooltipTrigger>
       <TooltipContent side="left" className="max-w-xs leading-relaxed">
-        {hint}
+        <HintText text={hint} />
       </TooltipContent>
     </Tooltip>
   )
@@ -196,7 +200,7 @@ function NetworkRow({ row }: { row: TimelineRow }) {
   const failed = row.status.kind === "failed"
 
   return (
-    <li className="border-b border-border/60 px-3 py-1.5 hover:bg-accent/40">
+    <li className={cn("border-b border-border/60 px-3 py-1.5", ROW_HOVER)}>
       <Hint hint={row.hint}>
         <div className={NET_GRID}>
           <span className="flex min-w-0 items-baseline gap-1.5">

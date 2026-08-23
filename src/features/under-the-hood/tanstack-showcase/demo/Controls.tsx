@@ -8,10 +8,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { COLUMN_LABEL, MONO } from "../styles"
+import { COLUMN_LABEL, MONO, TOGGLE_SELECTED } from "../styles"
 import type { ServerConfig } from "../engine/server"
 import type { RungId } from "../engine/rungs"
 import { RUNGS } from "../engine/rungs"
+import { HintText } from "../HintText"
 import type { Mode } from "./useTanstackShowcase"
 
 const MODES: {
@@ -62,7 +63,7 @@ export function Controls({
   const active = RUNGS[rung]
 
   return (
-    <TooltipProvider delay={200}>
+    <TooltipProvider delay={0}>
       {/* Deliberately *not* panel-shaped. The app below is a bordered window;
           this is the rig around it, so it reads as a strip of switches — inset,
           dashed, and labelled — rather than another surface of the product. */}
@@ -97,7 +98,11 @@ export function Controls({
                     // is the one whose tooltip people most need. The click is
                     // refused in the handler instead.
                     aria-disabled={!step.available}
-                    className={cn("text-xs", !step.available && "opacity-50")}
+                    className={cn(
+                      "text-xs",
+                      TOGGLE_SELECTED,
+                      !step.available && "opacity-50"
+                    )}
                   />
                 }
               >
@@ -107,7 +112,7 @@ export function Controls({
                 {/* One wrapper: the popup lays its children out in a row, so
                     two siblings become two columns. */}
                 <span className="block">
-                  {step.blurb}
+                  <HintText text={step.blurb} />
                   {!step.available && (
                     <span className="mt-1.5 block text-muted-foreground">
                       Not built yet — coming in a later phase.
@@ -182,7 +187,7 @@ export function Controls({
                   {item.label}
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs leading-relaxed">
-                  {item.hint}
+                  <HintText text={item.hint} />
                 </TooltipContent>
               </Tooltip>
             ))}

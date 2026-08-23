@@ -74,6 +74,26 @@ export const STATUS_COLOR: Record<"in-progress" | "done", string> = {
 }
 
 /**
+ * A visibly selected toggle.
+ *
+ * The shadcn toggle marks its selected state with `aria-pressed:bg-muted` — the
+ * same colour as its hover — so "selected" and "the mouse is here" look
+ * identical, and in light mode muted against the background is barely a shade.
+ * Inverting instead makes the active rung and mode unmistakable in both themes.
+ */
+export const TOGGLE_SELECTED =
+  "aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:hover:bg-foreground"
+
+/**
+ * Row hover in the network log.
+ *
+ * Tinted from the foreground rather than an accent token: it then flips with the
+ * theme automatically and stays visible on both the light and dark devtools
+ * surfaces, where `bg-accent/40` was too close to the panel to see at all.
+ */
+export const ROW_HOVER = "hover:bg-foreground/[0.07]"
+
+/**
  * The colour of something the reader did.
  *
  * Every other line in the log is a library or the network reacting; these are

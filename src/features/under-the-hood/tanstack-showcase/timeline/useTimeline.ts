@@ -141,7 +141,7 @@ type OpenRow = TimelineRow & {
  * would tear rows in half. By this point the pairing is done and a row is a
  * whole thing that can be dropped safely.
  */
-const MAX_LOGGING_ROWS = 20
+export const MAX_LOGGING_ROWS = 20
 
 export function useTimeline(flows: Flow[], rung: RungId): Timeline {
   return useMemo(() => {
