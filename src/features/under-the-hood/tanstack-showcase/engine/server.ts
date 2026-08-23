@@ -157,7 +157,21 @@ const SEED: Ticket[] = [
 export type Server = ReturnType<typeof createServer>
 
 export function createServer(bus: EventBus, config: ServerConfig) {
-  let rows: Ticket[] = SEED.map((t) => ({ ...t }))
+  /**
+   * A fresh copy of the seed, deep enough that nothing downstream can reach back
+   * and mutate the template. A shallow copy would share the `body` and
+   * `comments` arrays with `SEED`, so one careless in-place edit would corrupt
+   * every later reset — including the ones that are supposed to make the rungs
+   * comparable.
+   */
+  const seedRows = (): Ticket[] =>
+    SEED.map((ticket) => ({
+      ...ticket,
+      body: [...ticket.body],
+      comments: ticket.comments.map((comment) => ({ ...comment })),
+    }))
+
+  let rows: Ticket[] = seedRows()
   let nextId = SEED.length + 1
   // Held in a mutable box so the controls can retune latency mid-flight without
   // rebuilding the server and losing the rows already in it.
@@ -198,6 +212,20 @@ export function createServer(bus: EventBus, config: ServerConfig) {
   return {
     setConfig(next: Partial<ServerConfig>) {
       current = { ...current, ...next }
+    },
+
+    /**
+     * Put the data back exactly as it started.
+     *
+     * Called when the rung changes. Without it the server keeps whatever the
+     * previous rung did to it — a deleted ticket, a status you flipped — and the
+     * next rung starts from different data. Comparing two rungs is the entire
+     * point of the entry, and a comparison only means something if both sides
+     * begin from the same place.
+     */
+    reset() {
+      rows = seedRows()
+      nextId = SEED.length + 1
     },
 
     listTickets: (trace = "GET /tickets") =>

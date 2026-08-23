@@ -11,6 +11,14 @@ import { useLiveQueryInstrumentation } from "./useLiveQueryInstrumentation"
 const TRACE = JSON.stringify(TICKETS_KEY)
 
 /**
+ * Ids for rows that exist only optimistically, until the server assigns a real
+ * one. Negative and counting down, so they can never collide with a server id
+ * and never depend on the clock — the demo has to behave the same on every run.
+ */
+let nextTempId = 0
+const tempId = () => --nextTempId
+
+/**
  * Rung 2 — the same app again, with a TanStack DB collection over rung 1's Query.
  *
  * Two things change, and they're the two things Query alone can't do.
@@ -83,7 +91,7 @@ export function useDbTickets({
         collection.insert({
           // The server assigns the real id; this one only has to be unique
           // locally for the moment the row is optimistic.
-          id: Date.now(),
+          id: tempId(),
           title,
           assignee,
           status: "open",
