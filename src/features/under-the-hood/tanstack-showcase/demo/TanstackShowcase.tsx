@@ -32,6 +32,7 @@ export function TanstackShowcase() {
     selectedId,
     select,
     timeline,
+    clearLog,
     railOffset,
     latestEvent,
     attachFlows,
@@ -81,7 +82,7 @@ export function TanstackShowcase() {
               )}
             </RungHost>
 
-            <TimelinePanel timeline={timeline} />
+            <TimelinePanel timeline={timeline} onClear={clearLog} />
           </div>
         </SwitchBlur>
 

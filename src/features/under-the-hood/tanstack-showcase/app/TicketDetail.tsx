@@ -1,17 +1,38 @@
+import { Trash2 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { MONO } from "../styles"
+import { BARE_SELECT, MONO } from "../styles"
 import type { LoadState } from "../rungs/contract"
 import type { Ticket, TicketStatus } from "../engine/types"
-import { AssigneeAvatar, StatusBadge } from "./TicketMeta"
+import { TicketComments } from "./TicketComments"
+import { AssigneeAvatar, STATUS_LABEL, StatusDot } from "./TicketMeta"
+import { displayName } from "./people"
 
 const STATUSES: TicketStatus[] = ["open", "in-progress", "done"]
 
 /**
+ * The floor under a ticket body. Shared with the skeleton so the loading state
+ * and the real thing are exactly the same height — otherwise every load ends
+ * with the pane jumping.
+ */
+const BODY_MIN_H = "min-h-44"
+
+/**
  * The detail pane — where the rungs diverge most visibly. At rung 0 this shows
  * a skeleton on every single selection; at rung 1 a ticket you've already
- * opened paints instantly.
+ * opened paints instantly; at rung 2 it never goes to the server at all.
+ *
+ * The two actions live in the title bar rather than a footer, which is where an
+ * issue tracker puts them: status is the thing you change most, so it's a
+ * dropdown you can hit without reading, and delete is an icon beside it.
  */
 export function TicketDetail({
   ticket,
@@ -36,77 +57,162 @@ export function TicketDetail({
     )
   }
 
-  if (state === "loading" || !ticket) return <DetailSkeleton />
+  if (state === "loading") return <DetailSkeleton />
+
+  // Ready-but-missing means the ticket is gone (deleted, or never existed).
+  // This branch used to fall through to the skeleton, which spun forever.
+  if (state === "error" || !ticket) {
+    return (
+      <div className="grid h-full place-items-center p-8">
+        <p className="max-w-56 text-center text-sm text-balance text-muted-foreground">
+          That ticket isn't there any more.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full flex-col">
-      <header className="shrink-0 border-b border-border px-5 py-4">
+      <header className="shrink-0 space-y-3 border-b border-border px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <h2 className="text-base leading-snug font-semibold text-pretty">
             {ticket.title}
           </h2>
-          <StatusBadge status={ticket.status} />
+
+          <div className="flex shrink-0 items-center gap-1">
+            <Select
+              value={ticket.status}
+              onValueChange={(value) =>
+                onStatus(ticket.id, value ?? ticket.status)
+              }
+              disabled={isMutating}
+            >
+              <SelectTrigger
+                size="sm"
+                className={cn(BARE_SELECT, "text-xs")}
+                aria-label="Status"
+              >
+                <SelectValue>
+                  <span className="flex items-center gap-2">
+                    <StatusDot status={ticket.status} />
+                    {STATUS_LABEL[ticket.status]}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              {/* The popup is portalled to the document root, which puts it
+                *outside* `.showcase-app` — so it has to carry the scope itself
+                or it inherits webfun's palette instead of the app's. */}
+              <SelectContent className="showcase-app">
+                {STATUSES.map((status) => (
+                  <SelectItem key={status} value={status} className="text-xs">
+                    <span className="flex items-center gap-2">
+                      <StatusDot status={status} />
+                      {STATUS_LABEL[status]}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8 text-muted-foreground hover:text-destructive"
+              disabled={isMutating}
+              onClick={() => onDelete(ticket.id)}
+              aria-label="Delete ticket"
+              title="Delete ticket"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
         </div>
-        <div className="mt-2 flex items-center gap-2">
+
+        <div className="flex items-center gap-2">
           <AssigneeAvatar name={ticket.assignee} className="size-5" />
-          <span className={cn(MONO, "text-muted-foreground")}>
-            #{ticket.id} · {ticket.assignee}
+          <span className="text-sm">{displayName(ticket.assignee)}</span>
+          <span className="text-xs text-muted-foreground">Assignee</span>
+          <span className={cn(MONO, "ml-auto text-muted-foreground")}>
+            #{ticket.id}
           </span>
         </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto px-5 py-4">
-        <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
-          {ticket.body}
-        </p>
-      </div>
-
-      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3">
-        <ToggleGroup
-          size="sm"
-          variant="outline"
-          spacing={0}
-          value={[ticket.status]}
-          onValueChange={(value) => {
-            // Clicking the active status off would mean "no status", which the
-            // model doesn't have — ignore it rather than inventing one.
-            if (value.length === 0) return
-            onStatus(ticket.id, value[0] as TicketStatus)
-          }}
-          disabled={isMutating}
-        >
-          {STATUSES.map((status) => (
-            <ToggleGroupItem key={status} value={status} className="text-xs">
-              {status}
-            </ToggleGroupItem>
+        {/* A floor under the body rather than a margin below it: short tickets
+            and long ones then start their comment thread at the same place, so
+            the pane doesn't reflow as you click between them. */}
+        <div className={cn(BODY_MIN_H, "space-y-3")}>
+          {ticket.body.map((line, i) => (
+            <p key={i} className="text-sm leading-relaxed text-pretty">
+              {line}
+            </p>
           ))}
-        </ToggleGroup>
-
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={isMutating}
-          onClick={() => onDelete(ticket.id)}
-          className="text-xs text-muted-foreground hover:text-destructive"
-        >
-          Delete
-        </Button>
-      </footer>
+        </div>
+        <TicketComments comments={ticket.comments} />
+      </div>
     </div>
   )
 }
 
+/**
+ * The loading state, built from the *same* markup as the real pane with
+ * `Bar` standing in for each piece of text.
+ *
+ * Matching heights by hand never quite works — a bar of some chosen pixel
+ * height is not the height of a line box. `Bar` instead renders real (invisible)
+ * text inside the same typographic classes, so the line box is identical by
+ * construction and the swap from skeleton to content doesn't move anything.
+ */
 function DetailSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <div className="shrink-0 space-y-3 border-b border-border px-5 py-4">
-        <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-        <div className="h-3 w-1/3 animate-pulse rounded bg-muted/60" />
-      </div>
-      <div className="flex-1 space-y-2 px-5 py-4">
-        <div className="h-3 w-full animate-pulse rounded bg-muted/60" />
-        <div className="h-3 w-5/6 animate-pulse rounded bg-muted/60" />
+      <header className="shrink-0 space-y-3 border-b border-border px-5 py-4">
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-base leading-snug font-semibold">
+            <Bar className="w-2/3" />
+          </h2>
+          <div className="flex shrink-0 items-center gap-1">
+            <div className="h-8 w-[8.5rem] animate-pulse rounded bg-muted/60" />
+            <div className="size-8" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="size-5 shrink-0 animate-pulse rounded-full bg-muted" />
+          <span className="text-sm">
+            <Bar className="w-24" />
+          </span>
+        </div>
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-auto px-5 py-4">
+        <div className={cn(BODY_MIN_H, "space-y-3")}>
+          <p className="text-sm leading-relaxed">
+            <Bar className="w-full" />
+          </p>
+          <p className="text-sm leading-relaxed">
+            <Bar className="w-5/6" />
+          </p>
+        </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * A placeholder shaped like one line of whatever text it sits in. The text is
+ * really there and really invisible, which is what makes the height exact.
+ */
+export function Bar({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "inline-block max-w-full animate-pulse rounded bg-muted text-transparent select-none",
+        className
+      )}
+    >
+      &nbsp;
+    </span>
   )
 }

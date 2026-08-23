@@ -6,6 +6,7 @@ import type { TicketStatus } from "../../engine/types"
 import type { LoadState, TicketsView } from "../contract"
 import type { TicketCollection } from "./collection"
 import { TICKETS_KEY } from "./collection"
+import { useLiveQueryInstrumentation } from "./useLiveQueryInstrumentation"
 
 const TRACE = JSON.stringify(TICKETS_KEY)
 
@@ -47,6 +48,12 @@ export function useDbTickets({
     [selectedId]
   )
 
+  // DB reports its own live-query activity, the same way Query reports its
+  // cache. Without this the timeline shows an empty panel for a selection at
+  // this rung, which reads as "nothing was recorded" rather than "this cost
+  // nothing" — and a live query really did run.
+  useLiveQueryInstrumentation(detail.collection, bus, TRACE)
+
   const listState: LoadState = list.isReady ? "ready" : "loading"
   const detailState: LoadState =
     selectedId === null ? "idle" : detail.isReady ? "ready" : "loading"
@@ -80,7 +87,8 @@ export function useDbTickets({
           title,
           assignee,
           status: "open",
-          body: "Filed from the composer.",
+          body: ["Filed from the composer."],
+          comments: [],
         })
       )
     },
@@ -100,11 +108,14 @@ export function useDbTickets({
   )
 
   const remove = useCallback(
-    (id: number) => {
+    async (id: number) => {
       bus.emit("ui:interaction", `delete #${id}`)
-      write(`delete #${id}`, () => collection.delete(id))
+      bus.emit("db:optimistic:apply", `delete #${id}`, TRACE)
+      // The row leaves the list immediately; this promise is about the server
+      // agreeing, which is what the selection waits on.
+      await collection.delete(id).isPersisted.promise
     },
-    [bus, collection, write]
+    [bus, collection]
   )
 
   return {

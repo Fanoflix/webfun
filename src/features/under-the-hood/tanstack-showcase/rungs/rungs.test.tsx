@@ -10,8 +10,22 @@ import { RungHost } from "./RungHost"
 import type { TicketsView } from "./contract"
 
 const TICKETS: Ticket[] = [
-  { id: 1, title: "One", status: "open", assignee: "sam", body: "first" },
-  { id: 2, title: "Two", status: "done", assignee: "ada", body: "second" },
+  {
+    id: 1,
+    title: "One",
+    status: "open",
+    assignee: "sam",
+    body: ["first"],
+    comments: [],
+  },
+  {
+    id: 2,
+    title: "Two",
+    status: "done",
+    assignee: "ada",
+    body: ["second"],
+    comments: [],
+  },
 ]
 
 /** A server that answers instantly and counts what it was asked. */

@@ -1,4 +1,4 @@
-import type { EventKind, Flow, NodeId, ShowcaseEvent } from "./types"
+import type { EventKind, Flow, FlowKind, NodeId, ShowcaseEvent } from "./types"
 
 /**
  * Where each kind of event happens, and how to say it in English.
@@ -18,6 +18,7 @@ const EVENT_META: Record<EventKind, { node: NodeId; label: string }> = {
   "query:cache:write": { node: "query", label: "response written to cache" },
   "query:invalidate": { node: "query", label: "queries invalidated" },
   "query:error": { node: "query", label: "request failed" },
+  "db:live:read": { node: "db", label: "live query ran — no request" },
   "db:optimistic:apply": { node: "db", label: "optimistic write applied" },
   "db:optimistic:rollback": { node: "db", label: "rolled back" },
   "sync:enqueue": { node: "sync", label: "queued for sync" },
@@ -29,12 +30,18 @@ const EVENT_META: Record<EventKind, { node: NodeId; label: string }> = {
 }
 
 export type EventBus = {
-  /** Open a new flow. Whatever the previous flow collected is replaced. */
-  beginFlow: (label: string) => void
+  /**
+   * Start a new segment. Previous segments are *kept* — the log accumulates the
+   * way a network tab does with "preserve log" on, so you can compare what two
+   * clicks cost without having to remember the first one.
+   */
+  beginFlow: (label: string, kind?: FlowKind) => void
   emit: (kind: EventKind, detail?: string, trace?: string) => void
+  /** Throw the whole log away. The rung switch and the clear button do this. */
+  clear: () => void
   subscribe: (listener: () => void) => () => void
   /** Stable snapshot — safe as a `useSyncExternalStore` getSnapshot. */
-  getFlow: () => Flow | null
+  getFlows: () => Flow[]
 }
 
 let nextId = 0
@@ -47,21 +54,30 @@ const uid = (prefix: string) => `${prefix}-${++nextId}`
 export function createEventBus(now: () => number = () => Date.now()): EventBus {
   // Replaced wholesale on every change, never mutated, so a referential
   // equality check in `useSyncExternalStore` is enough to detect updates.
-  let flow: Flow | null = null
+  let flows: Flow[] = []
   const listeners = new Set<() => void>()
 
   const notify = () => listeners.forEach((l) => l())
 
   return {
-    beginFlow(label) {
-      flow = { id: uid("flow"), label, startedAt: now(), events: [] }
+    beginFlow(label, kind = "interaction") {
+      flows = [
+        ...flows,
+        { id: uid("flow"), label, kind, startedAt: now(), events: [] },
+      ]
+      notify()
+    },
+
+    clear() {
+      flows = []
       notify()
     },
 
     emit(kind, detail, trace) {
-      // An event with no flow to belong to is dropped rather than opening one
-      // implicitly: background noise would otherwise land at the head of the
-      // timeline and read as though the user had caused it.
+      // An event with no segment to belong to is dropped rather than opening one
+      // implicitly: background noise would otherwise land at the head of the log
+      // and read as though the user had caused it.
+      const flow = flows.at(-1)
       if (!flow) return
       const meta = EVENT_META[kind]
       const event: ShowcaseEvent = {
@@ -73,7 +89,10 @@ export function createEventBus(now: () => number = () => Date.now()): EventBus {
         trace,
         at: now() - flow.startedAt,
       }
-      flow = { ...flow, events: [...flow.events, event] }
+      flows = [
+        ...flows.slice(0, -1),
+        { ...flow, events: [...flow.events, event] },
+      ]
       notify()
     },
 
@@ -82,6 +101,6 @@ export function createEventBus(now: () => number = () => Date.now()): EventBus {
       return () => listeners.delete(listener)
     },
 
-    getFlow: () => flow,
+    getFlows: () => flows,
   }
 }
