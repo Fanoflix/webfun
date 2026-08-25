@@ -93,6 +93,9 @@ export function useTanstackShowcase() {
       switchTimer.current = setTimeout(() => {
         setRungState(next)
         setSelectedId(null)
+        // Same tickets, same statuses, every time — so what changes between
+        // rungs is the data layer and nothing else.
+        server.reset()
         // A different data layer's numbers aren't comparable with the last
         // one's, so the log starts empty rather than mixing the two.
         bus.clear()
@@ -103,7 +106,7 @@ export function useTanstackShowcase() {
         setPendingRung(null)
       }, RUNG_SWITCH_MS)
     },
-    [bus, rung, pendingRung]
+    [bus, rung, pendingRung, server]
   )
 
   // Cleanup only: a pending switch must not fire into an unmounted component.

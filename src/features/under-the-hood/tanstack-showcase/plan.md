@@ -1,6 +1,6 @@
 # TanStack showcase — plan
 
-Status: **Phases 1 and 3 built (2026-08-23).** The ladder is complete. Phase 2 (Architecture mode) is next, then Phase 4 (Code mode).
+Status: **Phases 1 and 3 built, `how-it-works.md` written (2026-08-24).** Phase 2 (Architecture mode) is next, then Phase 4 (Code mode).
 
 ## The idea
 
@@ -289,7 +289,19 @@ state chip and a staleness countdown ring, driven by the real timers.
   recorded" rather than "this cost nothing", and a live query really did run.
 
   The teammate actor is still outstanding and moves to a later phase.
-- **Phase 4.** Code panel, `how-it-works.md`, reel script.
+- **Phase 4.** Code panel. (`how-it-works.md` and the reel script were pulled
+  forward and are done — the mechanics were freshest right after rung 2 landed,
+  and neither depends on the remaining UI modes.)
+
+## Determinism
+
+Switching rung calls `server.reset()`, so every rung starts from the same
+tickets with the same statuses. Without it the server kept whatever the previous
+rung did to it and the two sides of a comparison began from different data —
+which would make the comparison meaningless. Seed rows are deep-copied so nothing
+downstream can mutate the template, and rung 2's optimistic ids count *down* from
+zero rather than using the clock, so nothing about the initial state varies
+between runs.
 
 ## Assumptions
 
