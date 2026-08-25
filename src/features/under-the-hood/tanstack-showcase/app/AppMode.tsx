@@ -52,7 +52,9 @@ export function AppMode({
         {/* The inbox is the raised surface and the detail pane is the canvas
             under it — `card` is a step lighter than `background` in both of the
             app's themes, so the centre reads as recessed. */}
-        <div className="flex w-[19rem] shrink-0 flex-col border-r border-border bg-card/35">
+        {/* `min-h-0` so the list inside can shrink and scroll on its own,
+            rather than pushing the column past the bottom of the window. */}
+        <div className="flex min-h-0 w-[19rem] shrink-0 flex-col border-r border-border bg-card/35">
           <div className="shrink-0 border-b border-border px-2 py-1.5">
             <Composer onCreate={view.create} isMutating={view.isMutating} />
           </div>

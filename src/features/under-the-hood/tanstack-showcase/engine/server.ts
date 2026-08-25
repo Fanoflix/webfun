@@ -163,11 +163,30 @@ export function createServer(bus: EventBus, config: ServerConfig) {
   // rebuilding the server and losing the rows already in it.
   let current = { ...config }
 
-  const delay = () => {
+  /**
+   * The wait, interruptible.
+   *
+   * A real request can be called off while it's in flight, and a demo that
+   * can't do that leaves rows sitting on "pending" long after the reader has
+   * moved on — which is exactly what a real network tab would *not* show.
+   */
+  const delay = (signal?: AbortSignal) => {
     const spread = (Math.random() * 2 - 1) * current.jitterMs
-    return new Promise<void>((resolve) =>
-      setTimeout(resolve, Math.max(0, current.latencyMs + spread))
-    )
+    return new Promise<void>((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new DOMException("Aborted", "AbortError"))
+        return
+      }
+      const timer = setTimeout(resolve, Math.max(0, current.latencyMs + spread))
+      signal?.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(timer)
+          reject(new DOMException("Aborted", "AbortError"))
+        },
+        { once: true }
+      )
+    })
   }
 
   /**
@@ -182,10 +201,16 @@ export function createServer(bus: EventBus, config: ServerConfig) {
     what: string,
     trace: string,
     produce: () => T,
-    isWrite = false
+    isWrite = false,
+    signal?: AbortSignal
   ) {
     bus.emit("server:receive", what, trace)
-    await delay()
+    try {
+      await delay(signal)
+    } catch (error) {
+      bus.emit("server:cancelled", what, trace)
+      throw error
+    }
     if (isWrite && current.failWrites) {
       bus.emit("server:reject", what, trace)
       throw new Error(`Server rejected: ${what}`)
@@ -200,15 +225,31 @@ export function createServer(bus: EventBus, config: ServerConfig) {
       current = { ...current, ...next }
     },
 
-    listTickets: (trace = "GET /tickets") =>
-      handle("GET /tickets", trace, () => rows.map((t) => ({ ...t }))),
+    listTickets: (trace = "GET /tickets", signal?: AbortSignal) =>
+      handle(
+        "GET /tickets",
+        trace,
+        () => rows.map((t) => ({ ...t })),
+        false,
+        signal
+      ),
 
-    getTicket: (id: number, trace = `GET /tickets/${id}`) =>
-      handle(`GET /tickets/${id}`, trace, () => {
-        const found = rows.find((t) => t.id === id)
-        if (!found) throw new Error(`No ticket ${id}`)
-        return { ...found }
-      }),
+    getTicket: (
+      id: number,
+      trace = `GET /tickets/${id}`,
+      signal?: AbortSignal
+    ) =>
+      handle(
+        `GET /tickets/${id}`,
+        trace,
+        () => {
+          const found = rows.find((t) => t.id === id)
+          if (!found) throw new Error(`No ticket ${id}`)
+          return { ...found }
+        },
+        false,
+        signal
+      ),
 
     createTicket: (title: string, assignee: string, trace = "POST /tickets") =>
       handle(

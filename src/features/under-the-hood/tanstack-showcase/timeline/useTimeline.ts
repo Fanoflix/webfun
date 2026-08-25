@@ -16,6 +16,7 @@ import { explainEvent } from "./explanations"
  */
 export type RowStatus =
   | { kind: "pending" }
+  | { kind: "cancelled" }
   | { kind: "ok"; code: number }
   | { kind: "failed"; code: number }
   | { kind: "local"; label: string }
@@ -102,6 +103,7 @@ const CHILD_TONE: Partial<Record<EventKind, ChildRow["tone"]>> = {
   "query:cache:stale": "cache",
   "query:cache:write": "write",
   "query:invalidate": "invalidate",
+  "query:cache:remove": "invalidate",
   "query:error": "error",
   "db:live:read": "cache",
   "db:optimistic:apply": "optimistic",
@@ -146,9 +148,7 @@ export const MAX_LOGGING_ROWS = 20
 export function useTimeline(flows: Flow[], rung: RungId): Timeline {
   return useMemo(() => {
     const segments = trimToLastRows(
-      flows
-        .map((flow) => buildSegment(flow, rung))
-        .filter((segment) => segment.rows.length > 0),
+      buildSegments(flows, rung).filter((segment) => segment.rows.length > 0),
       MAX_LOGGING_ROWS
     )
 
@@ -197,153 +197,170 @@ function trimToLastRows(
   return kept
 }
 
-/** Folds one interaction's events into rows. */
-function buildSegment(flow: Flow, rung: RungId): TimelineSegment {
-  const rows: OpenRow[] = []
-  /** Requests awaiting a response, oldest first, keyed by trace. */
+/**
+ * Folds every interaction's events into labelled groups of rows — in one pass,
+ * on purpose.
+ *
+ * Each group is built in isolation and a response could only close a row from
+ * the same group. But a response arrives whenever it arrives: click a second
+ * ticket while the first is still loading and its reply lands in the *next*
+ * group, leaving the row that asked for it stuck on "pending" forever while the
+ * reply itself was discarded. Sharing the open-request map across groups is what
+ * lets a row be closed by a response that shows up after you'd moved on.
+ *
+ * Times are absolute here for the same reason. An event's `at` is relative to
+ * its own flow, so a request and a response from different flows are measured
+ * from different origins — subtracting them would produce nonsense.
+ */
+function buildSegments(flows: Flow[], rung: RungId): TimelineSegment[] {
+  const segments: TimelineSegment[] = []
+
+  /** Requests still waiting for a reply, oldest first, keyed by trace. */
   const open = new Map<string, OpenRow[]>()
-  /**
-   * The most recent *network* row per trace, kept after it closes so a cache
-   * write that lands after the response still nests under its request rather
-   * than under an earlier local row that happens to share the key.
-   */
+  /** The most recent network row per trace, so late children still find it. */
   const lastNetwork = new Map<string, OpenRow>()
 
   const openFor = (trace: string) => open.get(trace) ?? []
   const pushOpen = (trace: string, row: OpenRow) =>
     open.set(trace, [...openFor(trace), row])
   const shiftOpen = (trace: string) => {
-    const queue = openFor(trace)
-    const [first, ...rest] = queue
+    const [first, ...rest] = openFor(trace)
     open.set(trace, rest)
     return first as OpenRow | undefined
   }
 
-  const startRow = (
-    event: ShowcaseEvent,
-    name: string,
-    received: boolean
-  ): OpenRow => {
-    const row: OpenRow = {
-      id: event.id,
-      hint: explainEvent(null, rung),
-      source: null,
-      name,
-      status: { kind: "pending" },
-      time: "—",
-      bar: null,
-      children: [],
-      startedAt: event.at,
-      endedAt: null,
-      received,
-    }
-    rows.push(row)
-    if (event.trace) {
-      pushOpen(event.trace, row)
-      lastNetwork.set(event.trace, row)
-    }
-    return row
-  }
+  for (const flow of flows) {
+    const rows: OpenRow[] = []
 
-  for (const event of flow.events) {
-    const trace = event.trace ?? event.detail ?? ""
-
-    switch (event.kind) {
-      // The flow's own title already names the interaction, so a row for it
-      // would just be noise at the top of every list.
-      case "ui:interaction":
-        break
-
-      // At rung 1 the client decides to fetch before the server hears about
-      // it, so this is where the row begins.
-      case "query:fetch:start":
-        startRow(event, event.detail ?? "request", false)
-        break
-
-      case "server:receive": {
-        // Reuse the row the client already opened, unless one is still in
-        // flight for this trace — two concurrent identical requests are two
-        // rows, which is exactly what makes deduplication visible.
-        // Claim the row the client opened for this trace, if one is waiting.
-        // If every row for this trace is already in flight, this is a *second*
-        // concurrent request and deserves its own row — that duplication is
-        // exactly what request deduplication removes at rung 1, so hiding it
-        // would erase the thing worth seeing.
-        const unclaimed = openFor(trace).find((row) => !row.received)
-        const row =
-          unclaimed ?? startRow(event, event.detail ?? "request", true)
-        row.received = true
-        row.name = event.detail ?? row.name
-        row.startedAt = Math.min(row.startedAt, event.at)
-        break
+    const startRow = (
+      event: ShowcaseEvent,
+      at: number,
+      name: string,
+      received: boolean
+    ): OpenRow => {
+      const row: OpenRow = {
+        id: event.id,
+        hint: explainEvent(null, rung),
+        source: null,
+        name,
+        status: { kind: "pending" },
+        time: "—",
+        bar: null,
+        children: [],
+        startedAt: at,
+        endedAt: null,
+        received,
       }
-
-      case "server:respond":
-      case "server:reject": {
-        const row = shiftOpen(trace)
-        if (!row) break
-        row.endedAt = event.at
-        row.status =
-          event.kind === "server:respond"
-            ? { kind: "ok", code: 200 }
-            : { kind: "failed", code: 500 }
-        row.time = formatMs(event.at - row.startedAt)
-        break
+      rows.push(row)
+      if (event.trace) {
+        pushOpen(event.trace, row)
+        lastNetwork.set(event.trace, row)
       }
+      return row
+    }
 
-      default: {
-        const tone = CHILD_TONE[event.kind]
-        if (!tone) break
-        const parent = openFor(trace).at(-1) ?? lastNetwork.get(trace)
-        const child: ChildRow = {
-          id: event.id,
-          hint: explainEvent(event.kind, rung),
-          label: event.label,
-          detail: event.detail,
-          tone,
-          source: sourceOf(event.node),
-        }
-        if (parent) {
-          parent.children.push(child)
+    for (const event of flow.events) {
+      const trace = event.trace ?? event.detail ?? ""
+      // Absolute, so rows spanning two flows still measure correctly.
+      const at = flow.startedAt + event.at
+
+      switch (event.kind) {
+        // The flow's own title already names the interaction.
+        case "ui:interaction":
+          break
+
+        case "query:fetch:start":
+          startRow(event, at, event.detail ?? "request", false)
+          break
+
+        case "server:receive": {
+          const unclaimed = openFor(trace).find((row) => !row.received)
+          const row =
+            unclaimed ?? startRow(event, at, event.detail ?? "request", true)
+          row.received = true
+          row.name = event.detail ?? row.name
+          row.startedAt = Math.min(row.startedAt, at)
           break
         }
-        // Nothing went to the network for this — a pure cache read. It gets a
-        // row of its own, with a pseudo-status instead of a code.
-        rows.push({
-          id: event.id,
-          hint: explainEvent(event.kind, rung),
-          source: sourceOf(event.node),
-          name: event.detail ?? event.label,
-          status: { kind: "local", label: localLabel(event.kind) },
-          time: "0ms",
-          bar: null,
-          children: [],
-          startedAt: event.at,
-          endedAt: event.at,
-          received: true,
-        })
+
+        case "server:respond":
+        case "server:reject":
+        case "server:cancelled": {
+          const row = shiftOpen(trace)
+          if (!row) break
+          row.endedAt = at
+          row.status =
+            event.kind === "server:respond"
+              ? { kind: "ok", code: 200 }
+              : event.kind === "server:cancelled"
+                ? { kind: "cancelled" }
+                : { kind: "failed", code: 500 }
+          row.time =
+            event.kind === "server:cancelled"
+              ? "—"
+              : formatMs(at - row.startedAt)
+          break
+        }
+
+        default: {
+          const tone = CHILD_TONE[event.kind]
+          if (!tone) break
+          const parent = openFor(trace).at(-1) ?? lastNetwork.get(trace)
+          const child: ChildRow = {
+            id: event.id,
+            hint: explainEvent(event.kind, rung),
+            label: event.label,
+            detail: event.detail,
+            tone,
+            source: sourceOf(event.node),
+          }
+          if (parent) {
+            parent.children.push(child)
+            break
+          }
+          rows.push({
+            id: event.id,
+            hint: explainEvent(event.kind, rung),
+            source: sourceOf(event.node),
+            name: event.detail ?? event.label,
+            status: { kind: "local", label: localLabel(event.kind) },
+            time: "0ms",
+            bar: null,
+            children: [],
+            startedAt: at,
+            endedAt: at,
+            received: true,
+          })
+        }
       }
     }
-  }
 
-  const span = Math.max(1, flow.events.at(-1)?.at ?? 1)
-  for (const row of rows) {
-    if (row.endedAt === null || row.endedAt === row.startedAt) continue
-    row.bar = {
-      left: row.startedAt / span,
-      width: (row.endedAt - row.startedAt) / span,
+    // Geometry is measured within the group, so a quick interaction beside a
+    // slow one still shows its own shape. A row that outlives its group is
+    // clamped rather than drawn off the end.
+    const last = flow.events.at(-1)
+    const span = Math.max(1, last ? last.at : 1)
+    const clamp = (n: number) => Math.min(Math.max(n, 0), 1)
+
+    for (const row of rows) {
+      if (row.endedAt === null || row.endedAt === row.startedAt) continue
+      const left = clamp((row.startedAt - flow.startedAt) / span)
+      row.bar = {
+        left,
+        width: clamp((row.endedAt - row.startedAt) / span - 0) || 0.02,
+      }
     }
+
+    segments.push({
+      id: flow.id,
+      label: flow.label,
+      kind: flow.kind,
+      rows,
+      duration: formatMs(span),
+    })
   }
 
-  return {
-    id: flow.id,
-    label: flow.label,
-    kind: flow.kind,
-    rows,
-    // Bars are scaled within their own interaction, not across the whole log:
-    // a fast click next to a slow one should still show its own shape.
-    duration: formatMs(span),
-  }
+  return segments
 }
 
 /** The pseudo-status a row gets when nothing went to the network for it. */
@@ -351,6 +368,7 @@ function localLabel(kind: EventKind): string {
   if (kind === "query:cache:hit") return "from cache"
   if (kind === "query:cache:stale") return "cache · stale"
   if (kind === "query:invalidate") return "invalidated"
+  if (kind === "query:cache:remove") return "removed"
   if (kind === "db:live:read") return "live query"
   if (kind === "db:optimistic:apply") return "optimistic"
   if (kind === "db:optimistic:rollback") return "rolled back"

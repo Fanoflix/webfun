@@ -22,16 +22,16 @@ const MODES: {
   available: boolean
 }[] = [
   {
-    id: "app",
-    label: "App",
-    hint: "The product itself. Use it normally and watch what each click costs.",
+    id: "network",
+    label: "Network",
+    hint: "Every request the app made, laid out like a browser's network tab — what each click cost, and what it skipped entirely.",
     available: true,
   },
   {
     id: "architecture",
     label: "Architecture",
-    hint: "A diagram of the moving parts, lighting up as data flows through them. Not built yet.",
-    available: false,
+    hint: "The same system drawn as a path: what you touch on the left, the server on the right, and whatever each rung puts in between.",
+    available: true,
   },
   {
     id: "code",
@@ -134,7 +134,7 @@ export function Controls({
             <Slider
               value={[serverConfig.latencyMs]}
               min={0}
-              max={2000}
+              max={5000}
               step={50}
               onValueChange={(value) =>
                 onServerConfig({
@@ -144,7 +144,7 @@ export function Controls({
               aria-label="Server latency"
             />
           </span>
-          <span className={cn(MONO, "w-12 text-foreground")}>
+          <span className={cn(MONO, "w-14 text-foreground")}>
             {serverConfig.latencyMs}ms
           </span>
         </label>

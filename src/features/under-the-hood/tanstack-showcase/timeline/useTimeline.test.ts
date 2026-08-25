@@ -75,3 +75,57 @@ describe("useTimeline row cap", () => {
     expect(result.current.requestCount).toBe(MAX_LOGGING_ROWS)
   })
 })
+
+describe("responses that arrive after you've moved on", () => {
+  /**
+   * Click a second ticket while the first is still loading and the reply lands
+   * in the *next* segment, because events always append to the newest flow.
+   * Paired per-segment, the row that asked for it sat on "pending" forever and
+   * the reply was thrown away.
+   */
+  it("closes a row opened in an earlier segment", () => {
+    const first: Flow = {
+      id: "f-a",
+      label: "Open ticket #1",
+      kind: "interaction",
+      startedAt: 0,
+      events: [
+        {
+          id: "e-a1",
+          kind: "server:receive",
+          node: "server",
+          label: "request received",
+          detail: "/tickets/1",
+          trace: "/tickets/1",
+          at: 0,
+        },
+      ],
+    }
+    const second: Flow = {
+      id: "f-b",
+      label: "Open ticket #2",
+      kind: "interaction",
+      startedAt: 100,
+      events: [
+        {
+          id: "e-b1",
+          // The first ticket's reply, landing during the second interaction.
+          kind: "server:respond",
+          node: "server",
+          label: "responded",
+          detail: "/tickets/1",
+          trace: "/tickets/1",
+          at: 500,
+        },
+      ],
+    }
+
+    const { result } = renderHook(() => useTimeline([first, second], 0))
+    const row = result.current.segments[0].rows[0]
+
+    expect(row.name).toBe("/tickets/1")
+    expect(row.status.kind).toBe("ok")
+    // Measured across the two flows: opened at 0, answered at 100 + 500.
+    expect(row.time).toBe("600ms")
+  })
+})

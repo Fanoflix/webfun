@@ -60,6 +60,7 @@ export type EventKind =
   | "query:cache:stale"
   | "query:cache:write"
   | "query:invalidate"
+  | "query:cache:remove"
   | "query:error"
   | "db:live:read"
   | "db:optimistic:apply"
@@ -69,6 +70,7 @@ export type EventKind =
   | "sync:ack"
   | "server:receive"
   | "server:respond"
+  | "server:cancelled"
   | "server:reject"
 
 export type ShowcaseEvent = {

@@ -98,7 +98,11 @@ function renderRung(
   const ui = (id: number | null) =>
     strict ? <StrictMode>{host(id)}</StrictMode> : host(id)
   const utils = render(ui(selectedId))
-  return { ...utils, rerender: (id: number | null) => utils.rerender(ui(id)) }
+  return {
+    ...utils,
+    bus,
+    rerender: (id: number | null) => utils.rerender(ui(id)),
+  }
 }
 
 /**
@@ -257,5 +261,85 @@ describe("rung 2 — TanStack DB", () => {
     await vi.waitFor(() =>
       expect(view.current!.list.find((t) => t.id === 1)?.status).toBe(before)
     )
+  })
+})
+
+describe("rung 2 instrumentation", () => {
+  /**
+   * `subscribeChanges` only reports changes that happen *after* it attaches, and
+   * selecting a ticket resolves the live query before the effect runs — so the
+   * read that matters most was happening before anything was listening, and the
+   * panel showed an empty flow. `includeInitialState` is what closes that gap.
+   */
+  it("reports the live-query read that a selection causes", async () => {
+    const { calls, server } = countingServer()
+    const { rerender, bus } = renderRung(2, server, null)
+    await expectListSize(2)
+
+    rerender(1)
+    await settle()
+
+    const kinds = bus
+      .getFlows()
+      .flatMap((flow) => flow.events)
+      .map((event) => event.kind)
+
+    expect(kinds).toContain("db:live:read")
+    // And it really was local — nothing was asked of the server.
+    expect(calls.detail).toEqual([])
+  })
+})
+
+/** A server that actually takes time, and records what got called off. */
+function slowServer(ms = 80) {
+  const aborted: number[] = []
+  const server = {
+    setConfig: () => {},
+    listTickets: async () => TICKETS.map((t) => ({ ...t })),
+    getTicket: (id: number, _trace?: string, signal?: AbortSignal) =>
+      new Promise<Ticket>((resolve, reject) => {
+        const timer = setTimeout(
+          () => resolve({ ...TICKETS.find((t) => t.id === id)! }),
+          ms
+        )
+        signal?.addEventListener(
+          "abort",
+          () => {
+            clearTimeout(timer)
+            aborted.push(id)
+            reject(new DOMException("Aborted", "AbortError"))
+          },
+          { once: true }
+        )
+      }),
+    createTicket: async () => TICKETS[0],
+    setStatus: async () => TICKETS[0],
+    deleteTicket: async () => {},
+  }
+  return { aborted, server: server as unknown as Server }
+}
+
+describe("moving on before a request comes back", () => {
+  it("rung 1 calls off the request nobody is waiting for", async () => {
+    const { aborted, server } = slowServer()
+    const { rerender } = renderRung(1, server, null)
+    await expectListSize(2)
+
+    rerender(1)
+    // Switch before the first one has had time to land.
+    rerender(2)
+
+    await vi.waitFor(() => expect(aborted).toContain(1))
+  })
+
+  it("rung 0 calls it off too — but only because the code says so", async () => {
+    const { aborted, server } = slowServer()
+    const { rerender } = renderRung(0, server, null)
+    await expectListSize(2)
+
+    rerender(1)
+    rerender(2)
+
+    await vi.waitFor(() => expect(aborted).toContain(1))
   })
 })

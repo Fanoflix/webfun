@@ -26,9 +26,13 @@ const EVENT_HINT: Partial<Record<EventKind, string>> = {
   "query:cache:write":
     "The answer is kept rather than thrown away. In Basic it was dropped the moment the component unmounted, so the next visit started from nothing.",
   "query:invalidate":
-    "One call marks everything about tickets as out of date. In Basic you had to remember every list and detail a write touched and refetch each one by hand — and forgetting one showed stale data with no error.",
+    "The write says which data it changed, and anything showing that data refreshes itself. In Basic you had to know every list and detail the change appeared in and refetch each one by hand — and forgetting one showed stale data with no error at all.",
+  "query:cache:remove":
+    "The deleted ticket's entry is thrown away rather than marked stale — there's nothing left to refresh. In Basic a deleted record could sit in a variable until something happened to overwrite it.",
   "query:error":
     "The failure is captured as state you can render. In Basic you were tracking an error flag by hand next to a loading flag.",
+  "server:cancelled":
+    "You moved on before this came back, so it was called off mid-flight. In Basic the reply still arrives and gets thrown away — the wait was paid for either way.",
   "db:live:read":
     "React Query still paid for the first open of every ticket. Here the rows are already on the client, so this is a local lookup — no request at all, not even once.",
   "db:optimistic:apply":

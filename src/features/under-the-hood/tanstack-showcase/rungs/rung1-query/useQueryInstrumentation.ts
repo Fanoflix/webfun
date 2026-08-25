@@ -39,6 +39,13 @@ export function useQueryInstrumentation(bus: EventBus) {
           )
           break
         }
+        case "removed": {
+          // A key thrown away rather than marked stale — what a delete does to
+          // the record it just removed. Without this the cleanup happens
+          // silently and the log implies the entry is still sitting there.
+          bus.emit("query:cache:remove", key, key)
+          break
+        }
         case "updated": {
           switch (event.action.type) {
             case "fetch":

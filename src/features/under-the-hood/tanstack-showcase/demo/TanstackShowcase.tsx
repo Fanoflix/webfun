@@ -2,6 +2,7 @@ import { IntroLink, ToolIntro } from "@/components/layout/ToolIntro"
 import { cn } from "@/lib/utils"
 import { RungHost } from "../rungs/RungHost"
 import { AppMode } from "../app/AppMode"
+import { ArchitectureMode } from "../architecture/ArchitectureMode"
 import { TimelinePanel } from "../timeline/TimelinePanel"
 import { SHELL } from "../styles"
 import { Controls } from "./Controls"
@@ -32,6 +33,7 @@ export function TanstackShowcase() {
     selectedId,
     select,
     timeline,
+    architecture,
     clearLog,
     railOffset,
     latestEvent,
@@ -41,7 +43,14 @@ export function TanstackShowcase() {
   return (
     <div
       className={cn(
-        "mx-auto flex h-full w-full max-w-[2240px] flex-col gap-4 self-stretch transition-[padding] duration-200",
+        // Pinned to the viewport rather than growing with its contents: the
+        // shell minus the shared layout's header (h-12) and padding (p-6, top
+        // and bottom). That's what stops the *page* scrolling — each pane
+        // handles its own overflow instead.
+        //
+        // `min-h-100` is the floor. Below that the page scrolls again, which is
+        // the right fallback: three panes crushed into 200px would be unusable.
+        "mx-auto flex h-[calc(100svh-6rem)] min-h-100 w-full max-w-[2240px] flex-col gap-4 self-stretch transition-[padding] duration-200",
         // The shared layout's own p-6 already covers part of the track.
         railOffset && "lg:pl-[calc(var(--sidebar-width)-1.5rem)]"
       )}
@@ -63,7 +72,7 @@ export function TanstackShowcase() {
         onServerConfig={updateServerConfig}
       />
 
-      <div className="relative flex min-h-[34rem] flex-1 flex-col">
+      <div className="relative flex min-h-0 flex-1 flex-col">
         <SwitchBlur active={switchingTo !== null}>
           <div className={cn(SHELL, "w-full")}>
             <RungHost
@@ -82,7 +91,15 @@ export function TanstackShowcase() {
               )}
             </RungHost>
 
-            <TimelinePanel timeline={timeline} onClear={clearLog} />
+            {/* The app stays put; only the instrument beside it changes. */}
+            {mode === "architecture" ? (
+              <ArchitectureMode
+                architecture={architecture}
+                latencyMs={serverConfig.latencyMs}
+              />
+            ) : (
+              <TimelinePanel timeline={timeline} onClear={clearLog} />
+            )}
           </div>
         </SwitchBlur>
 

@@ -64,14 +64,17 @@ export function useNaiveTickets({
       setDetailState("idle")
       return
     }
+    // Hand-rolled cancellation. Jitter means replies can land out of order, so
+    // without this the wrong ticket shows up — and without the controller the
+    // abandoned request runs to completion anyway, which is the part people
+    // forget. Both are yours to remember at this rung.
+    const controller = new AbortController()
     let cancelled = false
     setDetail(undefined)
     setDetailState("loading")
     server
-      .getTicket(selectedId)
+      .getTicket(selectedId, undefined, controller.signal)
       .then((ticket) => {
-        // Hand-rolled race protection. Jitter means responses can land out of
-        // order, and without this the wrong ticket shows up.
         if (cancelled) return
         setDetail(ticket)
         setDetailState("ready")
@@ -81,6 +84,7 @@ export function useNaiveTickets({
       })
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [selectedId, server, reloadToken])
 

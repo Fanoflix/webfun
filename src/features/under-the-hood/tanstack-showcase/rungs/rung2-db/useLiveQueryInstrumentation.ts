@@ -23,14 +23,22 @@ export function useLiveQueryInstrumentation(
 ) {
   useEffect(() => {
     if (!collection) return
-    const subscription = collection.subscribeChanges((changes) => {
-      if (changes.length === 0) return
-      bus.emit(
-        "db:live:read",
-        `${changes.length} ${changes.length === 1 ? "row" : "rows"}`,
-        trace
-      )
-    })
+    const subscription = collection.subscribeChanges(
+      (changes) => {
+        if (changes.length === 0) return
+        bus.emit(
+          "db:live:read",
+          `${changes.length} ${changes.length === 1 ? "row" : "rows"}`,
+          trace
+        )
+      },
+      // Without this the subscription only hears about changes *after* it
+      // attaches — and selecting a ticket resolves the live query before the
+      // effect runs, so the read that matters most had already happened and was
+      // never reported. The panel showed an empty flow, which reads as "nothing
+      // was recorded" rather than "this cost nothing".
+      { includeInitialState: true }
+    )
     return () => subscription.unsubscribe()
   }, [collection, bus, trace])
 }
