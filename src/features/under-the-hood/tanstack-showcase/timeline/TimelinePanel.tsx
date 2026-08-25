@@ -286,6 +286,10 @@ function StatusCell({ status }: { status: RowStatus }) {
   if (status.kind === "pending") {
     return <span className={cn(MONO, "text-muted-foreground/60")}>pending</span>
   }
+  if (status.kind === "cancelled") {
+    // Chrome's own word for a request nobody is waiting for any more.
+    return <span className={cn(MONO, "text-muted-foreground")}>cancelled</span>
+  }
   if (status.kind === "local") {
     // Chrome's own idiom for "this didn't cost a request": a parenthesised
     // note where the status code would be.

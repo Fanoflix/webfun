@@ -221,7 +221,51 @@ state chip and a staleness countdown ring, driven by the real timers.
      paints the cached value *and* refetches behind it, so the timeline promised
      a free read and then showed the request. Now split into `query:cache:hit`
      (fresh, nothing requested) and `query:cache:stale` (served, revalidating).
-- **Phase 2.** Architecture mode, wired to the same stream.
+- **Phase 2. ✅ BUILT.** The system drawn as a path — what you touch on the left,
+  the server on the right, and whatever each rung puts between them. The argument
+  is visible in the shape alone: rung 0 has nothing in the middle.
+
+  Nodes light and edges carry a packet straight off the same event stream the
+  network panel reads; an event knows which node it happened at, so lighting the
+  right box is a lookup rather than a second source of truth. Responses travel
+  back down the edge they arrived on.
+
+  It takes the *instrument's* slot, not the app's: the ticket app stays on the
+  left and the right-hand panel switches between the network log and the diagram.
+  So the left is always the product and the right is whatever you're watching it
+  through. An earlier version replaced the app instead and had to grow its own
+  row of buttons to be usable at all — which made the weakest interaction in the
+  entry the one thing on screen.
+
+  Vertical because that's the shape of the slot: top is what you touch, bottom is
+  the only slow part, and the space between them is what a rung adds.
+
+  A packet's direction follows what the event *is*, not where it happened. A
+  cache hit fires at Query, but what moves is the answer arriving at the
+  interface — drawn outward it put a marker meaning "here's your answer, free"
+  on the path a question takes. `INBOUND` in `useArchitecture.ts` is the list.
+
+  Packets are drawn as *themselves*: shape says what is travelling (a request, an
+  answer, a free read, an undo) and colour says whether that was good news, with
+  green reserved for the moments the entry argues for — a read that cost nothing,
+  a response that came back, a write the server accepted. One icon always keeps
+  one colour, so the pairing is learnable after a couple of flows. See
+  `architecture/markers.ts`.
+
+  The packet crossing the wire takes as long as the configured latency, so the
+  dial is the tempo control here as much as in the app; a fixed duration had the
+  request arriving while the app was still waiting for it. Edges above the server
+  are local hand-offs and stay short, because they genuinely are.
+
+  The mode toggle names the *instrument*, not the view: **Network / Architecture /
+  Code**. There is no "App" option, because the app is the constant on the left —
+  calling it an option would suggest the product is one of three things on offer.
+
+  Found while building it: `db:live:read` was never firing. `subscribeChanges`
+  only reports changes after it attaches, and selecting a ticket resolves the
+  live query before the effect runs — so the read that matters most happened
+  before anything was listening. `includeInitialState: true` closes it, and
+  `rungs.test.tsx` pins it (verified to fail without the option).
 - **Phase 3. ✅ BUILT** (out of order, before Phase 2, on purpose). Rung 2 is a
   TanStack DB collection fed by rung 1's Query — `queryCollectionOptions`, so the
   rung *keeps* rung 1's work rather than replacing it.

@@ -16,7 +16,7 @@ code in this folder, with the real numbers it uses.
 - `staleTime` = "how long an answer counts as still good. Ours is 30 seconds."
 - `gcTime` = "how long an answer nobody is watching is kept before being thrown away. Default 5 minutes."
 - `observer` = "a mounted component watching a key. A key with no observers is *inactive*."
-- `invalidate` = "mark answers as old, so the next person who asks triggers a fetch."
+- `invalidate` = "mark an answer as old, so anything showing it fetches a fresh one."
 - `collection` = "a set of rows held on the client, filed by id rather than by key."
 - `live query` = "a question asked of the collection — `where status = open` — that re-answers itself whenever the rows underneath change."
 - `optimistic` = "applied locally before the server has agreed to it."
@@ -42,8 +42,8 @@ spinners = N
 Two smaller costs are easy to miss. First, responses can land out of order — our
 fake server has jitter — so the code needs a cancellation flag, or selecting
 ticket 3 then 4 can leave you looking at 3. Second, after every write you have to
-refetch *by hand*, and you have to remember everything the write touched. Forget
-one and the screen shows stale data with no error anywhere.
+refetch *by hand*, and you have to remember every view the change appears in.
+Forget one and the screen shows stale data with no error anywhere.
 
 ### Rung 1 — TanStack Query
 
@@ -69,20 +69,47 @@ requests = 1
 spinners = 1
 ```
 
+**Cancellation.** Query hands `queryFn` an `AbortSignal`; forwarding it to the
+request is the whole job. Open a ticket, change your mind, open another — the
+first request is called off mid-flight rather than running to completion and
+having its answer thrown away. Rung 0 can do this too, but only because the code
+says so: an `AbortController` created in the effect and aborted in its cleanup,
+alongside the separate flag that stops a late reply overwriting the right one.
+
 **Deduplication.** Two observers asking for the same key while a fetch is already
 in flight get *one* request, not two. This is visible in the entry: at rung 0,
 React's StrictMode double-invokes effects in development and the log shows two
 identical `GET /tickets`; at rung 1 the same double-mount produces one.
 
-**Invalidation.** A write ends with one line:
+**Invalidation.** A write names the data it changed:
 
 ```
-invalidateQueries({ queryKey: ["tickets"] })
+changing #3's status  →  invalidate ["tickets","list"]
+                         invalidate ["tickets","detail",3]
+
+deleting #3           →  invalidate ["tickets","list"]
+                         remove     ["tickets","detail",3]
 ```
 
-which marks *every* key beginning with `tickets` as stale — the list, every
-detail, and any view added later. That's the fix for rung 0's forgetting problem:
-you can't leave a cache out of a list you never wrote.
+Anything watching those keys refreshes itself. That's the fix for rung 0's
+forgetting problem — but note *what* changed about the problem. In rung 0 you had
+to know every **view** the data appeared in. Here you name the **data**, and Query
+works out who was watching it. Add a third screen showing ticket 3 and it
+refreshes without anyone touching the delete handler.
+
+Two details worth knowing:
+
+- Invalidation is a **prefix match**. `invalidateQueries({ queryKey: ["tickets"] })`
+  would catch the list *and* every ticket's detail — safe, and a very common thing
+  to write, but it marks four other tickets stale because one of them changed. We
+  name the keys instead.
+- Invalidate is not refetch. Only **active** queries — ones a mounted component is
+  watching — refetch straight away. Inactive ones are simply flagged and refetch
+  the next time someone asks. That's why invalidation rows in the log cost `0ms`.
+
+For a delete the verb changes: `removeQueries`, not `invalidate`. Invalidating
+would ask Query to keep and refresh a cache entry for a ticket that no longer
+exists.
 
 ### Rung 2 — TanStack DB
 
@@ -141,7 +168,7 @@ Everything reported about the libraries is **real, and self-reported**:
   (`useQueryInstrumentation.ts`). Nothing decides when a cache hit happened
   except Query.
 - Live-query activity comes from `collection.subscribeChanges` — DB saying its
-  result set moved.
+  own result set moved.
 
 The distinction matters: had these been hand-placed `emit()` calls next to the
 code that reads data, the panel would be showing our *beliefs* about the

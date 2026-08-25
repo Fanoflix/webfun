@@ -9,11 +9,18 @@ import type { RungId } from "../engine/rungs"
 import { RUNGS, RUNG_SWITCH_MS } from "../engine/rungs"
 import { useEventStream } from "../engine/useEventStream"
 import { useTimeline } from "../timeline/useTimeline"
+import { useArchitecture } from "../architecture/useArchitecture"
 import { neighbourOf } from "./selection"
 import type { TicketsView } from "../rungs/contract"
 
-/** Architecture and Code arrive in later phases; the toggle already knows them. */
-export type Mode = "app" | "architecture" | "code"
+/**
+ * Which instrument is in the right-hand panel.
+ *
+ * Not "which view of the app" — the app is always on the left. Every name here
+ * is a way of watching it, which is why there's no "app" option: that would
+ * suggest the product is one of three things on offer rather than the constant.
+ */
+export type Mode = "network" | "architecture" | "code"
 
 /**
  * Everything the showcase page owns: which rung is running, how slow the fake
@@ -48,11 +55,12 @@ export function useTanstackShowcase() {
    */
   const [pendingRung, setPendingRung] = useState<RungId | null>(null)
   const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [mode, setMode] = useState<Mode>("app")
+  const [mode, setMode] = useState<Mode>("network")
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   const flows = useEventStream(bus)
   const timeline = useTimeline(flows, rung)
+  const architecture = useArchitecture(flows, rung)
 
   /**
    * The site's sidebar *floats over* content rather than pushing it (the shared
@@ -174,6 +182,7 @@ export function useTanstackShowcase() {
     selectedId,
     select,
     timeline,
+    architecture,
     clearLog: () => bus.clear(),
     railOffset,
     latestEvent: flows.at(-1)?.events.at(-1),

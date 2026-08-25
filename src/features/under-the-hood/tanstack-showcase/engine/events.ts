@@ -17,6 +17,7 @@ const EVENT_META: Record<EventKind, { node: NodeId; label: string }> = {
   },
   "query:cache:write": { node: "query", label: "response written to cache" },
   "query:invalidate": { node: "query", label: "queries invalidated" },
+  "query:cache:remove": { node: "query", label: "dropped from cache" },
   "query:error": { node: "query", label: "request failed" },
   "db:live:read": { node: "db", label: "live query ran — no request" },
   "db:optimistic:apply": { node: "db", label: "optimistic write applied" },
@@ -26,6 +27,10 @@ const EVENT_META: Record<EventKind, { node: NodeId; label: string }> = {
   "sync:ack": { node: "sync", label: "server acknowledged" },
   "server:receive": { node: "server", label: "request received" },
   "server:respond": { node: "server", label: "responded" },
+  "server:cancelled": {
+    node: "server",
+    label: "cancelled — nobody is waiting",
+  },
   "server:reject": { node: "server", label: "rejected the write" },
 }
 
