@@ -22,6 +22,7 @@ describe("TicketDetail when the ticket is gone", () => {
         isMutating={false}
         onStatus={noop}
         onDelete={noop}
+        onBack={noop}
       />
     )
 
@@ -36,6 +37,7 @@ describe("TicketDetail when the ticket is gone", () => {
         isMutating={false}
         onStatus={noop}
         onDelete={noop}
+        onBack={noop}
       />
     )
 

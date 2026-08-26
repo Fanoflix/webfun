@@ -19,7 +19,7 @@ export type RungId = 0 | 1 | 2
  * that you watch the *whole* data layer start from cold, so its first fetch has
  * to happen where you can see it, not behind the blur.
  */
-export const RUNG_SWITCH_MS = 600
+export const RUNG_SWITCH_MS = 400
 
 export type Rung = {
   id: RungId

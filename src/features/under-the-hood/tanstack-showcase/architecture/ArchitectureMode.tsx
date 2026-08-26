@@ -2,7 +2,7 @@ import { motion } from "motion/react"
 
 import { resolveEase } from "@/features/motion/eases"
 import { cn } from "@/lib/utils"
-import { COLUMN_LABEL, MONO, PANEL, PANEL_HEADER } from "../styles"
+import { MONO } from "../styles"
 import { markerFor } from "./markers"
 import type { Marker } from "./markers"
 import type { Architecture, ArchNodeView, EdgeTraffic } from "./useArchitecture"
@@ -68,43 +68,40 @@ export function ArchitectureMode({
   latencyMs: number
 }) {
   return (
-    <aside
-      className={cn(
-        PANEL,
-        "showcase-devtools w-full border-t border-border lg:w-[26rem] lg:shrink-0 lg:border-t-0 lg:border-l"
-      )}
-    >
-      <header className={PANEL_HEADER}>
-        <p className={COLUMN_LABEL}>Architecture</p>
-        <span className={cn(MONO, "text-muted-foreground")}>
-          {architecture.requestCount}{" "}
-          {architecture.requestCount === 1 ? "request" : "requests"}
-        </span>
-      </header>
-
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-0 overflow-auto p-4">
-        {architecture.nodes.map((node, i) => (
-          <div key={node.id} className="flex w-full flex-col items-center">
-            {i > 0 && (
-              <Edge
-                traffic={architecture.edges[i - 1]}
-                // Only the last edge is the wire. Everything above it is a
-                // hand-off between things already in the browser.
-                isNetwork={i === architecture.nodes.length - 1}
-                latencyMs={latencyMs}
-              />
-            )}
-            <Node node={node} />
-          </div>
-        ))}
-      </div>
-    </aside>
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-0 overflow-auto p-4">
+      {architecture.nodes.map((node, i) => (
+        <div key={node.id} className="flex w-full flex-col items-center">
+          {i > 0 && (
+            <Edge
+              traffic={architecture.edges[i - 1]}
+              // Only the last edge is the wire. Everything above it is a
+              // hand-off between things already in the browser.
+              isNetwork={i === architecture.nodes.length - 1}
+              latencyMs={latencyMs}
+            />
+          )}
+          <Node node={node} />
+        </div>
+      ))}
+    </div>
   )
 }
 
 function Node({ node }: { node: ArchNodeView }) {
+  const Icon = node.icon
+
   return (
-    <div className="relative w-full max-w-64 border border-border bg-card px-3 py-2">
+    <div
+      className={cn(
+        "relative w-full max-w-64 px-3 py-2",
+        // The remote one is drawn as something you reach rather than something
+        // you have: dashed, unfilled, set apart from the boxes that live in the
+        // browser with it.
+        node.remote
+          ? "border border-dashed border-border bg-transparent"
+          : "border border-border bg-card"
+      )}
+    >
       {/* A ring that plays once per arrival. Keyed on the event id, so a new
           event restarts it and an unrelated re-render does not. */}
       {node.pulseKey && (
@@ -118,8 +115,17 @@ function Node({ node }: { node: ArchNodeView }) {
         />
       )}
 
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-sm font-semibold">{node.label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-semibold">
+          <Icon
+            className={cn(
+              "size-3.5 shrink-0",
+              node.remote ? "text-muted-foreground" : "text-foreground/70"
+            )}
+            aria-hidden
+          />
+          {node.label}
+        </p>
         <p className="text-[10px] text-muted-foreground">{node.role}</p>
       </div>
       <p
@@ -234,7 +240,23 @@ function Edge({
     // A long run on purpose. The packet's *duration* follows the latency dial,
     // but the distance is what makes that duration legible — over a short gap
     // even a slow packet reads as a blink.
-    <div className="relative h-24 w-px shrink-0 bg-border">
+    //
+    // The wire is dashed and labelled; the hops above it are solid. That one
+    // difference is the whole argument — a rung earns its keep by not crossing
+    // this line.
+    <div
+      className={cn(
+        "relative h-24 shrink-0",
+        isNetwork
+          ? "w-0 border-l border-dashed border-border"
+          : "w-px bg-border"
+      )}
+    >
+      {isNetwork && (
+        <span className="absolute top-1/2 right-full mr-2 -translate-y-1/2 text-[9px] tracking-wider text-muted-foreground uppercase">
+          network
+        </span>
+      )}
       {/* The line lights up with the marker for exactly as long as it's there.
           Nothing crossed the gap, but the two blocks *did* talk — colouring the
           connection says that without implying a journey. */}

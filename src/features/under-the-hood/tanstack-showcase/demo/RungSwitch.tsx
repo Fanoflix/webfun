@@ -62,6 +62,11 @@ export function SwitchBlur({
         opacity: active ? 0.5 : 1,
       }}
       transition={{ duration: 0.25, ease: resolveEase("smooth") }}
+      // Blurring a subtree this large means re-rasterising it every frame.
+      // Promoting it for the duration of the switch keeps that off the main
+      // thread; leaving it promoted the rest of the time would just hold a
+      // full-size layer for nothing.
+      style={{ willChange: active ? "filter, opacity" : "auto" }}
       className="flex min-h-0 flex-1"
     >
       {children}

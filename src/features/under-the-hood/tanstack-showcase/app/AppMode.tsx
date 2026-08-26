@@ -24,15 +24,24 @@ export function AppMode({
   view,
   selectedId,
   onSelect,
+  onBack,
   latestEvent,
 }: {
   view: TicketsView
   selectedId: number | null
   onSelect: (id: number) => void
+  onBack: () => void
   latestEvent: ShowcaseEvent | undefined
 }) {
   return (
-    <section className={cn(PANEL, "showcase-app min-w-0 flex-1")}>
+    // A floor on narrow screens, where this sits above the instrument panel
+    // rather than beside it and would otherwise be squeezed to nothing.
+    <section
+      className={cn(
+        PANEL,
+        "showcase-app min-h-[28rem] min-w-0 flex-1 lg:min-h-0"
+      )}
+    >
       <header className={PANEL_HEADER}>
         <div className="flex items-center gap-2">
           <span className="grid size-5 place-items-center rounded bg-primary text-primary-foreground">
@@ -52,9 +61,19 @@ export function AppMode({
         {/* The inbox is the raised surface and the detail pane is the canvas
             under it — `card` is a step lighter than `background` in both of the
             app's themes, so the centre reads as recessed. */}
-        {/* `min-h-0` so the list inside can shrink and scroll on its own,
+        {/* Below `lg` the list and the detail take turns: a 19rem column on a
+            390px screen leaves the detail about 80px, which is no pane at all.
+            Side by side from `lg` up, where there's room for both.
+
+            `min-h-0` so the list inside can shrink and scroll on its own,
             rather than pushing the column past the bottom of the window. */}
-        <div className="flex min-h-0 w-[19rem] shrink-0 flex-col border-r border-border bg-card/35">
+        <div
+          data-pane="inbox"
+          className={cn(
+            "min-h-0 w-full shrink-0 flex-col border-border bg-card/35 lg:flex lg:w-[19rem] lg:border-r",
+            selectedId === null ? "flex" : "hidden"
+          )}
+        >
           <div className="shrink-0 border-b border-border px-2 py-1.5">
             <Composer onCreate={view.create} isMutating={view.isMutating} />
           </div>
@@ -68,8 +87,15 @@ export function AppMode({
           </div>
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div
+          data-pane="detail"
+          className={cn(
+            "min-w-0 flex-1 lg:block",
+            selectedId === null ? "hidden" : "block"
+          )}
+        >
           <TicketDetail
+            onBack={onBack}
             ticket={view.detail}
             state={view.detailState}
             isMutating={view.isMutating}

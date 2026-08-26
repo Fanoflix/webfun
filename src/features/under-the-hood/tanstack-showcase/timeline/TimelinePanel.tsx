@@ -19,8 +19,6 @@ import {
   MONO,
   NET_GRID,
   NETWORK,
-  PANEL,
-  PANEL_HEADER,
   ROW_HOVER,
 } from "../styles"
 import type { NodeId } from "../engine/types"
@@ -43,13 +41,39 @@ import type {
  * vanished. It clears when the rung changes (a different data layer's numbers
  * aren't comparable) or when you press the clear button.
  */
-export function TimelinePanel({
-  timeline,
+/** The clear-log button. Handed to the panel header as an action. */
+export function ClearLogButton({
   onClear,
+  disabled,
 }: {
-  timeline: Timeline
   onClear: () => void
+  disabled: boolean
 }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-6 text-muted-foreground hover:text-foreground"
+            onClick={onClear}
+            disabled={disabled}
+            aria-label="Clear log"
+          />
+        }
+      >
+        <Ban className="size-3.5" />
+      </TooltipTrigger>
+      <TooltipContent side="left">Clear the log</TooltipContent>
+    </Tooltip>
+  )
+}
+
+/** How long a newly arrived line stays lit before fading back to the row. */
+const FLASH_MS = 250
+
+export function TimelinePanel({ timeline }: { timeline: Timeline }) {
   // Pins to the newest row as the log tails, unless someone has scrolled up to
   // read an older interaction — in which case they're left where they are.
   const scroll = useStickToBottom([timeline.segments])
@@ -58,69 +82,35 @@ export function TimelinePanel({
     // Instant: these are annotations on what you're already looking at, and a
     // delay turns "hover to understand a row" into a guessing game.
     <TooltipProvider delay={0}>
-      <aside
+      <div
         className={cn(
-          PANEL,
-          "showcase-devtools w-full border-t border-border lg:w-[26rem] lg:shrink-0 lg:border-t-0 lg:border-l"
+          NET_GRID,
+          COLUMN_LABEL,
+          "shrink-0 border-b border-border px-3 py-1.5"
         )}
       >
-        <header className={PANEL_HEADER}>
-          <div className="flex min-w-0 items-baseline gap-2">
-            <p className={COLUMN_LABEL}>Network</p>
-            <span className={cn(MONO, "text-muted-foreground")}>
-              {timeline.requestCount}{" "}
-              {timeline.requestCount === 1 ? "request" : "requests"}
-            </span>
-          </div>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-6 text-muted-foreground hover:text-foreground"
-                  onClick={onClear}
-                  disabled={timeline.isEmpty}
-                  aria-label="Clear log"
-                />
-              }
-            >
-              <Ban className="size-3.5" />
-            </TooltipTrigger>
-            <TooltipContent side="left">Clear the log</TooltipContent>
-          </Tooltip>
-        </header>
+        <span>Name</span>
+        <span className="text-right">Status</span>
+        <span className="w-12 text-right">Time</span>
+      </div>
 
-        <div
-          className={cn(
-            NET_GRID,
-            COLUMN_LABEL,
-            "shrink-0 border-b border-border px-3 py-1.5"
-          )}
-        >
-          <span>Name</span>
-          <span className="text-right">Status</span>
-          <span className="w-12 text-right">Time</span>
-        </div>
-
-        <ScrollArea
-          className="min-h-0 flex-1"
-          viewportRef={scroll.ref}
-          onViewportScroll={scroll.onScroll}
-        >
-          {timeline.isEmpty ? (
-            <p className="px-3 py-3 text-xs text-muted-foreground">
-              {timeline.hasFlow
-                ? "Nothing yet. Click a ticket, or add one."
-                : "Click a ticket, or add one, to see what it costs."}
-            </p>
-          ) : (
-            timeline.segments.map((segment) => (
-              <Segment key={segment.id} segment={segment} />
-            ))
-          )}
-        </ScrollArea>
-      </aside>
+      <ScrollArea
+        className="min-h-0 flex-1"
+        viewportRef={scroll.ref}
+        onViewportScroll={scroll.onScroll}
+      >
+        {timeline.isEmpty ? (
+          <p className="px-3 py-3 text-xs text-muted-foreground">
+            {timeline.hasFlow
+              ? "Nothing yet. Click a ticket, or add one."
+              : "Click a ticket, or add one, to see what it costs."}
+          </p>
+        ) : (
+          timeline.segments.map((segment) => (
+            <Segment key={segment.id} segment={segment} />
+          ))
+        )}
+      </ScrollArea>
     </TooltipProvider>
   )
 }
@@ -196,11 +186,41 @@ function Hint({
   )
 }
 
+/**
+ * The pale wash that runs over a line the moment it appears.
+ *
+ * A separate overlay rather than an animated `backgroundColor` on the row
+ * itself: Motion leaves the property it animated behind as an inline style,
+ * and an inline background beats the row's `hover:` class forever after — so
+ * flashing a row would quietly cost it its hover state.
+ *
+ * Mount-only by construction. Rows are keyed by id, so this runs once, when the
+ * event actually arrives, and never again as its status settles from pending to
+ * a code.
+ */
+function Flash() {
+  return (
+    <motion.span
+      aria-hidden
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: FLASH_MS / 1000, ease: "easeOut" }}
+      className="pointer-events-none absolute inset-0 bg-foreground/15"
+    />
+  )
+}
+
 function NetworkRow({ row }: { row: TimelineRow }) {
   const failed = row.status.kind === "failed"
 
   return (
-    <li className={cn("border-b border-border/60 px-3 py-1.5", ROW_HOVER)}>
+    <li
+      className={cn(
+        "relative border-b border-border/60 px-3 py-1.5",
+        ROW_HOVER
+      )}
+    >
+      <Flash />
       <Hint hint={row.hint}>
         <div className={NET_GRID}>
           <span className="flex min-w-0 items-baseline gap-1.5">
@@ -320,7 +340,8 @@ const CHILD_TONE_CLASS: Record<ChildRow["tone"], string> = {
 
 function ChildLine({ child }: { child: ChildRow }) {
   return (
-    <li>
+    <li className="relative">
+      <Flash />
       <Hint hint={child.hint}>
         <div
           className={cn(

@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react"
+import { ChevronLeft, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -46,12 +46,15 @@ export function TicketDetail({
   isMutating,
   onStatus,
   onDelete,
+  onBack,
 }: {
   ticket: Ticket | undefined
   state: LoadState
   isMutating: boolean
   onStatus: (id: number, status: TicketStatus) => void
   onDelete: (id: number) => void
+  /** Back to the inbox. Only shown where the two take turns. */
+  onBack: () => void
 }) {
   if (state === "idle") {
     return (
@@ -81,9 +84,21 @@ export function TicketDetail({
     <div className="flex h-full flex-col">
       <header className="shrink-0 space-y-3 border-b border-border px-5 py-4">
         <div className="flex items-start justify-between gap-4">
-          <h2 className="text-base leading-snug font-semibold text-pretty">
-            {ticket.title}
-          </h2>
+          <div className="flex min-w-0 items-start gap-1">
+            {/* Only where the list isn't on screen beside this. */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="-ml-2 size-7 shrink-0 text-muted-foreground lg:hidden"
+              onClick={onBack}
+              aria-label="Back to inbox"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <h2 className="text-base leading-snug font-semibold text-pretty">
+              {ticket.title}
+            </h2>
+          </div>
 
           <div className="flex shrink-0 items-center gap-1">
             <Select

@@ -1,3 +1,12 @@
+import {
+  Archive,
+  Database,
+  MousePointerClick,
+  Send,
+  Server,
+} from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+
 import type { RungId } from "../engine/rungs"
 import type { NodeId } from "../engine/types"
 
@@ -13,14 +22,35 @@ export type ArchNode = {
   label: string
   /** What it is, in a few words. */
   role: string
+  icon: LucideIcon
+  /**
+   * Is this somewhere else?
+   *
+   * The one distinction the diagram exists to make: everything else is code
+   * running in the browser, and this is a machine over a network. Four identical
+   * boxes hid that — the boundary is the thing every rung is trying to avoid
+   * crossing.
+   */
+  remote?: boolean
 }
 
 const NODES: Record<NodeId, ArchNode> = {
-  ui: { id: "ui", label: "Interface", role: "what you click" },
-  query: { id: "query", label: "Query", role: "keeps answers" },
-  db: { id: "db", label: "DB", role: "keeps rows" },
-  sync: { id: "sync", label: "Sync", role: "sends writes" },
-  server: { id: "server", label: "Server", role: "the only slow part" },
+  ui: {
+    id: "ui",
+    label: "Interface",
+    role: "what you click",
+    icon: MousePointerClick,
+  },
+  query: { id: "query", label: "Query", role: "keeps answers", icon: Archive },
+  db: { id: "db", label: "DB", role: "keeps rows", icon: Database },
+  sync: { id: "sync", label: "Sync", role: "sends writes", icon: Send },
+  server: {
+    id: "server",
+    label: "Server",
+    role: "the only slow part",
+    icon: Server,
+    remote: true,
+  },
 }
 
 /**
