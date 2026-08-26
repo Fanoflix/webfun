@@ -20,7 +20,7 @@ import type { TicketsView } from "../rungs/contract"
  * is a way of watching it, which is why there's no "app" option: that would
  * suggest the product is one of three things on offer rather than the constant.
  */
-export type Mode = "network" | "architecture" | "code"
+export type Mode = "network" | "architecture"
 
 /**
  * Everything the showcase page owns: which rung is running, how slow the fake
@@ -84,11 +84,25 @@ export function useTanstackShowcase() {
     [bus, selectedId]
   )
 
+  /**
+   * Go back to the inbox.
+   *
+   * Only reachable on a narrow screen, where the list and the detail take turns
+   * instead of sitting side by side — without it there'd be no way back to the
+   * list once a ticket was open.
+   */
+  const deselect = useCallback(() => setSelectedId(null), [])
+
   const setRung = useCallback(
     (next: RungId) => {
-      // Ignore a re-click on the current rung, and anything during a switch —
-      // two overlapping resets would leave a stray timer holding the old rung.
-      if (next === rung || pendingRung !== null) return
+      // A re-click on what's already running is a no-op, but a click during a
+      // switch retargets it rather than being swallowed: dropping it left the
+      // ladder showing one rung while another was still on its way, which read
+      // as the whole control being unresponsive.
+      if (next === (pendingRung ?? rung)) return
+      // Only one timer may be in flight — a leftover would swap in a rung the
+      // ladder has already moved past.
+      if (switchTimer.current) clearTimeout(switchTimer.current)
       setPendingRung(next)
       switchTimer.current = setTimeout(() => {
         setRungState(next)
@@ -181,6 +195,7 @@ export function useTanstackShowcase() {
     setMode,
     selectedId,
     select,
+    deselect,
     timeline,
     architecture,
     clearLog: () => bus.clear(),

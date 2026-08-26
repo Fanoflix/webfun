@@ -43,7 +43,7 @@ export function AppLayout() {
     >
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center gap-2 px-3">
+        <header className="flex h-9 shrink-0 items-center gap-2 px-3">
           <InsetSidebarTrigger />
         </header>
         <main className="flex flex-1 items-center justify-center p-6">

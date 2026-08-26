@@ -29,7 +29,7 @@ export const PANEL = "flex min-h-0 flex-col bg-background"
  * the two headers line up across the seam no matter what they end up containing.
  */
 export const PANEL_HEADER =
-  "flex h-10 shrink-0 items-center justify-between gap-3 border-b border-border px-3"
+  "flex h-9 shrink-0 items-center justify-between gap-3 border-b border-border px-3"
 
 /** Small caps label, used for column headers and panel titles. */
 export const COLUMN_LABEL =
@@ -80,24 +80,6 @@ export const STATUS_COLOR: Record<"in-progress" | "done", string> = {
   done: "#4caf7d",
 }
 
-/**
- * A visibly selected toggle.
- *
- * The shadcn toggle marks its selected state with `aria-pressed:bg-muted` — the
- * same colour as its hover — so "selected" and "the mouse is here" look
- * identical, and in light mode muted against the background is barely a shade.
- * Inverting instead makes the active rung and mode unmistakable in both themes.
- */
-export const TOGGLE_SELECTED =
-  "aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:hover:bg-foreground"
-
-/**
- * Row hover in the network log.
- *
- * Tinted from the foreground rather than an accent token: it then flips with the
- * theme automatically and stays visible on both the light and dark devtools
- * surfaces, where `bg-accent/40` was too close to the panel to see at all.
- */
 export const ROW_HOVER = "hover:bg-foreground/[0.07]"
 
 /**

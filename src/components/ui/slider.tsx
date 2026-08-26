@@ -27,7 +27,11 @@ function Slider({
       thumbAlignment="edge"
       {...props}
     >
-      <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
+      {/* `py-2` is a hit area, not spacing: the control collapses to the height
+          of the thumb, so clicking the track a few pixels high or low missed it
+          entirely and only the knob itself responded. The handler lives here, so
+          the padding has to be here too. */}
+      <SliderPrimitive.Control className="relative flex w-full touch-none items-center py-2 select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
         <SliderPrimitive.Track
           data-slot="slider-track"
           className="relative grow overflow-hidden bg-input/50 select-none data-horizontal:h-0.5 data-horizontal:w-full data-vertical:h-full data-vertical:w-0.5"

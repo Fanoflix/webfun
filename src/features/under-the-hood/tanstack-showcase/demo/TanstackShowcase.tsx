@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils"
 import { RungHost } from "../rungs/RungHost"
 import { AppMode } from "../app/AppMode"
 import { ArchitectureMode } from "../architecture/ArchitectureMode"
-import { TimelinePanel } from "../timeline/TimelinePanel"
+import { ClearLogButton, TimelinePanel } from "../timeline/TimelinePanel"
+import { InstrumentPanel } from "./InstrumentPanel"
 import { SHELL } from "../styles"
 import { Controls } from "./Controls"
 import { RungSwitch, SwitchBlur } from "./RungSwitch"
@@ -32,6 +33,7 @@ export function TanstackShowcase() {
     setMode,
     selectedId,
     select,
+    deselect,
     timeline,
     architecture,
     clearLog,
@@ -50,7 +52,7 @@ export function TanstackShowcase() {
         //
         // `min-h-100` is the floor. Below that the page scrolls again, which is
         // the right fallback: three panes crushed into 200px would be unusable.
-        "mx-auto flex h-[calc(100svh-6rem)] min-h-100 w-full max-w-[2240px] flex-col gap-4 self-stretch transition-[padding] duration-200",
+        "mx-auto flex w-full max-w-[2240px] flex-col gap-3 self-stretch transition-[padding] duration-200 lg:h-[calc(100svh-5rem)] lg:min-h-100",
         // The shared layout's own p-6 already covers part of the track.
         railOffset && "lg:pl-[calc(var(--sidebar-width)-1.5rem)]"
       )}
@@ -66,8 +68,6 @@ export function TanstackShowcase() {
       <Controls
         rung={displayRung}
         onRung={setRung}
-        mode={mode}
-        onMode={setMode}
         serverConfig={serverConfig}
         onServerConfig={updateServerConfig}
       />
@@ -86,20 +86,39 @@ export function TanstackShowcase() {
                   view={attachFlows(view)}
                   selectedId={selectedId}
                   onSelect={select}
+                  onBack={deselect}
                   latestEvent={latestEvent}
                 />
               )}
             </RungHost>
 
-            {/* The app stays put; only the instrument beside it changes. */}
-            {mode === "architecture" ? (
-              <ArchitectureMode
-                architecture={architecture}
-                latencyMs={serverConfig.latencyMs}
-              />
-            ) : (
-              <TimelinePanel timeline={timeline} onClear={clearLog} />
-            )}
+            {/* The app stays put; only the instrument beside it changes — and
+                the switch between instruments lives in that panel's own header,
+                because it isn't setup, it's what you're watching through. */}
+            <InstrumentPanel
+              mode={mode}
+              onMode={setMode}
+              meta={`${timeline.requestCount} ${
+                timeline.requestCount === 1 ? "request" : "requests"
+              }`}
+              actions={
+                mode === "network" ? (
+                  <ClearLogButton
+                    onClear={clearLog}
+                    disabled={timeline.isEmpty}
+                  />
+                ) : null
+              }
+            >
+              {mode === "architecture" ? (
+                <ArchitectureMode
+                  architecture={architecture}
+                  latencyMs={serverConfig.latencyMs}
+                />
+              ) : (
+                <TimelinePanel timeline={timeline} />
+              )}
+            </InstrumentPanel>
           </div>
         </SwitchBlur>
 
