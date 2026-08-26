@@ -1,5 +1,8 @@
 import { useCallback } from "react"
 import { eq, useLiveQuery } from "@tanstack/react-db"
+import { useQuery } from "@tanstack/react-query"
+
+import type { Server } from "../../engine/server"
 
 import type { EventBus } from "../../engine/events"
 import type { TicketStatus } from "../../engine/types"
@@ -7,6 +10,12 @@ import type { LoadState, TicketsView } from "../contract"
 import type { TicketCollection } from "./collection"
 import { TICKETS_KEY } from "./collection"
 import { useLiveQueryInstrumentation } from "./useLiveQueryInstrumentation"
+import {
+  IDLE_DETAIL_KEY,
+  STALE_TIME,
+  ticketKeys,
+  traceOf,
+} from "../rung1-query/keys"
 
 const TRACE = JSON.stringify(TICKETS_KEY)
 
@@ -21,23 +30,29 @@ const tempId = () => --nextTempId
 /**
  * Rung 2 — the same app again, with a TanStack DB collection over rung 1's Query.
  *
- * Two things change, and they're the two things Query alone can't do.
+ * What changes here is the *write* path, and it's the thing Query alone can't
+ * do without you writing it out by hand.
  *
- * First, there is no detail *fetch*. The rows are already here, so opening a
- * ticket is a local query, not a request — at rung 1 the first open of a ticket
- * still cost a round-trip, and here it never does.
- *
- * Second, writes are optimistic by default. `collection.update(...)` changes the
- * row locally, every live query watching it updates in the same tick, and the
+ * Writes are optimistic by default. `collection.update(...)` changes the row
+ * locally, every live query watching it updates in the same tick, and the
  * server is told afterwards. If the server refuses, DB puts the row back on its
- * own — no snapshots, no list of caches to repair.
+ * own — no snapshot to take, no `onMutate`/`onError` pair to keep in sync, no
+ * list of caches to repair.
+ *
+ * The read path is more modest than it looks, and worth being straight about:
+ * the *list* is local and live, so the detail pane's header paints from a row
+ * that's already here. But the body still costs a request, because the endpoint
+ * feeding the collection only sends summaries. A collection knows what it has
+ * been given and no more.
  */
 export function useDbTickets({
   collection,
+  server,
   bus,
   selectedId,
 }: {
   collection: TicketCollection
+  server: Server
   bus: EventBus
   selectedId: number | null
 }): TicketsView {
@@ -46,7 +61,11 @@ export function useDbTickets({
   // server yet.
   const list = useLiveQuery((q) => q.from({ ticket: collection }))
 
-  const detail = useLiveQuery(
+  // The selected row, read locally. It carries the header — title, status,
+  // assignee — which is why the detail pane has something to draw the moment
+  // you click, and why an optimistic status change shows up there in the same
+  // tick as in the list.
+  const selected = useLiveQuery(
     (q) =>
       selectedId === null
         ? undefined
@@ -60,11 +79,30 @@ export function useDbTickets({
   // cache. Without this the timeline shows an empty panel for a selection at
   // this rung, which reads as "nothing was recorded" rather than "this cost
   // nothing" — and a live query really did run.
-  useLiveQueryInstrumentation(detail.collection, bus, TRACE)
+  useLiveQueryInstrumentation(selected.collection, bus, TRACE)
+
+  // The body and comments, which the collection was never sent. Rung 1's Query
+  // client is still underneath — the collection is built on it — so this is the
+  // same cache, keyed the same way, and a ticket opened twice is still fetched
+  // once.
+  const detailQuery = useQuery({
+    queryKey:
+      selectedId === null ? IDLE_DETAIL_KEY : ticketKeys.detail(selectedId),
+    queryFn: ({ signal }) =>
+      server.getTicket(selectedId!, traceOf(ticketKeys.detail(selectedId!)), signal),
+    enabled: selectedId !== null,
+    staleTime: STALE_TIME,
+  })
 
   const listState: LoadState = list.isReady ? "ready" : "loading"
   const detailState: LoadState =
-    selectedId === null ? "idle" : detail.isReady ? "ready" : "loading"
+    selectedId === null
+      ? "idle"
+      : detailQuery.isError
+        ? "error"
+        : detailQuery.data
+          ? "ready"
+          : "loading"
 
   /**
    * Every write is the same shape: change the row, let DB show it immediately,
@@ -95,8 +133,9 @@ export function useDbTickets({
           title,
           assignee,
           status: "open",
-          body: ["Filed from the composer."],
-          comments: [],
+          // The server cuts the real excerpt from the body it stores; this is
+          // the optimistic stand-in until its summary comes back.
+          preview: "Filed from the composer.",
         })
       )
     },
@@ -129,7 +168,8 @@ export function useDbTickets({
   return {
     list: list.data,
     listState,
-    detail: detail.data?.[0],
+    summary: selected.data?.[0],
+    detail: detailQuery.data,
     detailState,
     // A write is never something the UI waits on here, so nothing is ever
     // "mutating" from the user's point of view. That *is* the feature.

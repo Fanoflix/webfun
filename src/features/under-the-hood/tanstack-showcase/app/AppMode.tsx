@@ -96,6 +96,7 @@ export function AppMode({
         >
           <TicketDetail
             onBack={onBack}
+            summary={view.summary}
             ticket={view.detail}
             state={view.detailState}
             isMutating={view.isMutating}

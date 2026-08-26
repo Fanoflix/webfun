@@ -1,5 +1,5 @@
 import type { EventBus } from "./events"
-import type { Ticket, TicketStatus } from "./types"
+import type { Ticket, TicketStatus, TicketSummary } from "./types"
 
 /**
  * The fake backend.
@@ -27,7 +27,31 @@ export const DEFAULT_SERVER_CONFIG: ServerConfig = {
   failWrites: false,
 }
 
-const SEED: Ticket[] = [
+/**
+ * A stored row. The server holds the whole ticket; `preview` isn't kept, it's
+ * cut from the body at response time — which is what a real backend does, and
+ * means the excerpt can never drift from the text it's excerpting.
+ */
+type Row = Omit<Ticket, "preview">
+
+/** What `GET /tickets` sends back for a row: the header, and a first line. */
+const summarise = (row: Row): TicketSummary => ({
+  id: row.id,
+  title: row.title,
+  status: row.status,
+  assignee: row.assignee,
+  preview: row.body[0] ?? "",
+})
+
+/** What `GET /tickets/:id` sends back: everything, copied so callers can't
+ * reach back into the server's own rows. */
+const detailOf = (row: Row): Ticket => ({
+  ...summarise(row),
+  body: [...row.body],
+  comments: row.comments.map((comment) => ({ ...comment })),
+})
+
+const SEED: Row[] = [
   {
     id: 1,
     title: "Login redirect loops on Safari",
@@ -164,14 +188,14 @@ export function createServer(bus: EventBus, config: ServerConfig) {
    * every later reset — including the ones that are supposed to make the rungs
    * comparable.
    */
-  const seedRows = (): Ticket[] =>
+  const seedRows = (): Row[] =>
     SEED.map((ticket) => ({
       ...ticket,
       body: [...ticket.body],
       comments: ticket.comments.map((comment) => ({ ...comment })),
     }))
 
-  let rows: Ticket[] = seedRows()
+  let rows: Row[] = seedRows()
   let nextId = SEED.length + 1
   // Held in a mutable box so the controls can retune latency mid-flight without
   // rebuilding the server and losing the rows already in it.
@@ -257,7 +281,9 @@ export function createServer(bus: EventBus, config: ServerConfig) {
       handle(
         "GET /tickets",
         trace,
-        () => rows.map((t) => ({ ...t })),
+        // Summaries only. The bodies stay on the server until something asks
+        // for one, which is the whole reason a detail request exists.
+        () => rows.map(summarise),
         false,
         signal
       ),
@@ -273,7 +299,7 @@ export function createServer(bus: EventBus, config: ServerConfig) {
         () => {
           const found = rows.find((t) => t.id === id)
           if (!found) throw new Error(`No ticket ${id}`)
-          return { ...found }
+          return detailOf(found)
         },
         false,
         signal
@@ -284,7 +310,7 @@ export function createServer(bus: EventBus, config: ServerConfig) {
         "POST /tickets",
         trace,
         () => {
-          const created: Ticket = {
+          const created: Row = {
             id: nextId++,
             title,
             status: "open",
@@ -293,7 +319,7 @@ export function createServer(bus: EventBus, config: ServerConfig) {
             comments: [],
           }
           rows = [created, ...rows]
-          return { ...created }
+          return summarise(created)
         },
         true
       ),
@@ -309,7 +335,7 @@ export function createServer(bus: EventBus, config: ServerConfig) {
         () => {
           rows = rows.map((t) => (t.id === id ? { ...t, status } : t))
           const updated = rows.find((t) => t.id === id)!
-          return { ...updated }
+          return summarise(updated)
         },
         true
       ),

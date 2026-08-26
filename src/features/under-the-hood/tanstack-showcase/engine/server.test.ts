@@ -41,11 +41,11 @@ describe("the fake server's starting state", () => {
 
   it("never lets a caller mutate the template behind the seed", async () => {
     const server = makeServer()
-    const rows = await server.listTickets()
+    const ticket = await server.getTicket(1)
 
     // A shallow copy would share these arrays with the seed itself.
-    rows[0].body.push("scribbled on")
-    rows[0].comments.push({
+    ticket.body.push("scribbled on")
+    ticket.comments.push({
       id: "x",
       author: "sam",
       body: "scribbled on",
@@ -53,9 +53,34 @@ describe("the fake server's starting state", () => {
     })
 
     server.reset()
-    const fresh = await server.listTickets()
+    const fresh = await server.getTicket(1)
 
-    expect(fresh[0].body).not.toContain("scribbled on")
-    expect(fresh[0].comments.map((c) => c.id)).not.toContain("x")
+    expect(fresh.body).not.toContain("scribbled on")
+    expect(fresh.comments.map((c) => c.id)).not.toContain("x")
+  })
+
+  /**
+   * The list is a list of summaries, and this is the assertion that keeps it
+   * one. Sending bodies here would cost nothing visible and quietly make every
+   * detail request in the demo redundant — which is precisely the dishonesty
+   * the split exists to remove.
+   */
+  it("sends summaries from the list, not bodies", async () => {
+    const server = makeServer()
+    const rows = await server.listTickets()
+
+    for (const row of rows) {
+      expect(row).not.toHaveProperty("body")
+      expect(row).not.toHaveProperty("comments")
+      expect(row.preview.length).toBeGreaterThan(0)
+    }
+  })
+
+  it("cuts the preview from the first line of the body", async () => {
+    const server = makeServer()
+    const [row] = await server.listTickets()
+    const full = await server.getTicket(row.id)
+
+    expect(row.preview).toBe(full.body[0])
   })
 })

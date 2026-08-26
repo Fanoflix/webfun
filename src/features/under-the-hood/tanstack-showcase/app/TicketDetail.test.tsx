@@ -17,6 +17,7 @@ describe("TicketDetail when the ticket is gone", () => {
   it("says so instead of loading forever", () => {
     render(
       <TicketDetail
+        summary={undefined}
         ticket={undefined}
         state="error"
         isMutating={false}
@@ -32,6 +33,7 @@ describe("TicketDetail when the ticket is gone", () => {
   it("does the same when the read succeeded but found nothing", () => {
     render(
       <TicketDetail
+        summary={undefined}
         ticket={undefined}
         state="ready"
         isMutating={false}

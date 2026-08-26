@@ -4,7 +4,7 @@ import type { QueryClient } from "@tanstack/react-query"
 
 import type { EventBus } from "../../engine/events"
 import type { Server } from "../../engine/server"
-import type { Ticket } from "../../engine/types"
+import type { TicketSummary } from "../../engine/types"
 
 /** The one query the collection is fed from. */
 export const TICKETS_KEY = ["tickets", "collection"] as const
@@ -18,6 +18,11 @@ const TRACE = JSON.stringify(TICKETS_KEY)
  * store of normalised rows on top, which is what makes local queries and
  * optimistic writes possible. Rung 2 doesn't replace rung 1's work; it stands
  * on it. (An Electric-backed collection would swap out only the sync source.)
+ *
+ * The collection holds *summaries*, because that is what the list endpoint
+ * sends. A collection is only ever as complete as the thing feeding it — so a
+ * ticket's body is still a request here, and pretending otherwise would be a
+ * property of our fake server rather than of TanStack DB.
  *
  * The `onInsert` / `onUpdate` / `onDelete` handlers are the write path. DB
  * applies the change locally *first*, calls the handler, and — this is the part
@@ -48,7 +53,7 @@ export function createTicketCollection({
   }
 
   return createCollection(
-    queryCollectionOptions<Ticket>({
+    queryCollectionOptions<TicketSummary>({
       queryClient,
       queryKey: TICKETS_KEY,
       queryFn: () => server.listTickets(TRACE),
