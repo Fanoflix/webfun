@@ -117,21 +117,28 @@ exists.
 (`queryCollectionOptions`), so Query still fetches and DB holds the result as
 rows filed by `getKey`. Two things follow.
 
-**Reads stop touching the network.** The detail view is a live query over rows
-that are already here:
+**Reads work the way they did at rung 1.** `GET /tickets` sends summaries, so
+the collection holds summaries — a collection is only ever as complete as the
+thing feeding it. Opening a ticket still fetches its body, through the same
+Query client under the same key, so a ticket opened twice is still fetched once.
+
+What the collection adds on the read side is that the row you clicked is *here*
+and *live*:
 
 ```
 from({ ticket: collection }).where(ticket.id = 3)
 ```
 
 Live queries recompute *incrementally* — when a row changes, the delta is
-propagated rather than the query re-run — so this is a local lookup, not a
-request. Rung 1 still paid for the first open of each ticket. Rung 2 pays:
+propagated rather than the query re-run. That matters at the moment of a write,
+not at the moment of a read: flip a status and this recomputes in the same tick,
+where rung 1 waits for the refetch its invalidation kicked off.
 
-```
-requests = 1   (the collection's own load, once)
-per open = 0
-```
+An earlier version of this entry claimed rung 2 opened a ticket with no request
+at all. That was true only because the fake list endpoint used to send whole
+tickets — a property of our server, not of TanStack DB. (Swap the sync source
+for Electric on the `tickets` table and the bodies really would be local, which
+is the version of this claim that holds.)
 
 **Writes land before the server hears about them.** `collection.update(id, …)`
 changes the row locally, every live query watching it updates in the same tick,

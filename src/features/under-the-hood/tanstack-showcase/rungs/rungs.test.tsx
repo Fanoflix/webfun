@@ -15,6 +15,7 @@ const TICKETS: Ticket[] = [
     title: "One",
     status: "open",
     assignee: "sam",
+    preview: "first",
     body: ["first"],
     comments: [],
   },
@@ -23,6 +24,7 @@ const TICKETS: Ticket[] = [
     title: "Two",
     status: "done",
     assignee: "ada",
+    preview: "second",
     body: ["second"],
     comments: [],
   },
@@ -215,19 +217,53 @@ describe("under StrictMode", () => {
 })
 
 describe("rung 2 — TanStack DB", () => {
-  it("opens a ticket without going to the server at all", async () => {
+  /**
+   * The honest version of a claim this file used to overstate.
+   *
+   * It once asserted that opening a ticket here costs no request at all. That
+   * was only true because the fake list endpoint sent whole tickets — a
+   * property of our server, not of TanStack DB. Now that `GET /tickets` sends
+   * summaries, the body is a real fetch at this rung too, and what the
+   * collection actually buys is the *header*: it is on screen from local rows
+   * before the body has been asked for.
+   */
+  it("has the header locally, and still fetches the body", async () => {
+    const { calls, server } = countingServer()
+    const view = captureView()
+    const { rerender } = renderRung(2, server, null, false, view.capture)
+    await expectListSize(2)
+
+    rerender(1)
+
+    // Synchronously after the selection: the summary is already there, and the
+    // detail request has not come back (it may not even have gone out).
+    expect(view.current!.summary?.title).toBe("One")
+    expect(view.current!.detail).toBeUndefined()
+
+    await settle()
+
+    // And the body did have to be asked for — one request, not zero.
+    expect(calls.detail).toEqual([1])
+    expect(calls.list).toBe(1)
+  })
+
+  it("does not refetch a body it has already read", async () => {
     const { calls, server } = countingServer()
     const { rerender } = renderRung(2, server, null)
     await expectListSize(2)
 
     rerender(1)
+    await vi.waitFor(() => expect(calls.detail).toEqual([1]))
+    rerender(2)
+    await vi.waitFor(() => expect(calls.detail).toEqual([1, 2]))
+
+    // The collection is built on rung 1's Query client, so the detail cache is
+    // rung 1's cache. Re-opening is free here for exactly the reason it is
+    // there — a shared key, not a second mechanism.
+    rerender(1)
     await settle()
 
-    // The rows are already local, so a detail view is a query rather than a
-    // request. Rung 1 still paid for the *first* open of each ticket; this
-    // never does.
-    expect(calls.detail).toEqual([])
-    expect(calls.list).toBe(1)
+    expect(calls.detail).toEqual([1, 2])
   })
 
   it("shows a write immediately, before the server has been told", async () => {
@@ -272,7 +308,7 @@ describe("rung 2 instrumentation", () => {
    * panel showed an empty flow. `includeInitialState` is what closes that gap.
    */
   it("reports the live-query read that a selection causes", async () => {
-    const { calls, server } = countingServer()
+    const { server } = countingServer()
     const { rerender, bus } = renderRung(2, server, null)
     await expectListSize(2)
 
@@ -285,8 +321,6 @@ describe("rung 2 instrumentation", () => {
       .map((event) => event.kind)
 
     expect(kinds).toContain("db:live:read")
-    // And it really was local — nothing was asked of the server.
-    expect(calls.detail).toEqual([])
   })
 })
 

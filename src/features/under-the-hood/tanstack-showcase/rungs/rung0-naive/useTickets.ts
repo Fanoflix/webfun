@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 
 import type { EventBus } from "../../engine/events"
 import type { Server } from "../../engine/server"
-import type { Ticket, TicketStatus } from "../../engine/types"
+import type { Ticket, TicketStatus, TicketSummary } from "../../engine/types"
 import type { LoadState, TicketsView } from "../contract"
 
 /**
@@ -26,7 +26,7 @@ export function useNaiveTickets({
   bus: EventBus
   selectedId: number | null
 }): TicketsView {
-  const [list, setList] = useState<Ticket[]>([])
+  const [list, setList] = useState<TicketSummary[]>([])
   const [listState, setListState] = useState<LoadState>("idle")
   const [detail, setDetail] = useState<Ticket | undefined>(undefined)
   const [detailState, setDetailState] = useState<LoadState>("idle")
@@ -140,6 +140,18 @@ export function useNaiveTickets({
   return {
     list,
     listState,
+    /**
+     * Nothing. The pane waits for the whole ticket before it can draw a title.
+     *
+     * Not a handicap invented for the demo: the list up there is *this
+     * component's* `useState`, so it is only reachable because the list and the
+     * detail happen to live in one hook. Move the detail to its own route — the
+     * usual shape — and there is no list in scope to read a title from, and no
+     * shared place to put one. That is the gap a cache closes at rung 1: the
+     * header becomes a property of the data, available to whoever asks for it,
+     * rather than a prop somebody has to thread down.
+     */
+    summary: undefined,
     detail,
     detailState,
     isMutating,

@@ -271,9 +271,12 @@ state chip and a staleness countdown ring, driven by the real timers.
   rung *keeps* rung 1's work rather than replacing it.
 
   Two behaviours carry the rung, and both are pinned by tests:
-  1. **Opening a ticket costs nothing.** The rows are already local, so the
-     detail view is a live query, not a request. Rung 1 still paid for the first
-     open of each ticket; rung 2 never does.
+  1. **The header is local and live.** The collection holds the summaries the
+     list endpoint sent, so the detail pane's title, status and assignee paint
+     from local rows on click — and an optimistic status change lands there in
+     the same tick. The *body* is still a request, through rung 1's cache under
+     rung 1's key. (This used to claim opening a ticket cost nothing at all;
+     that was an artifact of the list endpoint over-fetching, since fixed.)
   2. **Writes are optimistic, and undo themselves.** `collection.update(...)`
      lands locally in the same tick; if the server rejects, DB drops the
      optimistic layer on its own. Nothing in our code puts the row back.

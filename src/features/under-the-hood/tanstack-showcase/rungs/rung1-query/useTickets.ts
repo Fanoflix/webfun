@@ -5,38 +5,7 @@ import type { EventBus } from "../../engine/events"
 import type { Server } from "../../engine/server"
 import type { TicketStatus } from "../../engine/types"
 import type { LoadState, TicketsView } from "../contract"
-
-/**
- * How long an answer counts as fresh. Deliberately long: within this window
- * re-selecting a ticket paints with no request at all, which is the thing the
- * timeline is there to show.
- */
-export const STALE_TIME = 30_000
-
-/** One place that knows how ticket queries are keyed. */
-const ticketKeys = {
-  all: ["tickets"] as const,
-  list: () => ["tickets", "list"] as const,
-  detail: (id: number) => ["tickets", "detail", id] as const,
-}
-
-/**
- * The string form of a key, used as the correlation id on events. Matches what
- * the cache subscription reports, so a request and the cache write that follows
- * it line up in the timeline.
- */
-const traceOf = (key: readonly unknown[]) => JSON.stringify(key)
-
-/**
- * Where the detail observer parks when nothing is selected.
- *
- * `enabled` stops it fetching, but the observer still registers a query under
- * whatever key it was given — so a placeholder like `detail(-1)` would sit in
- * the cache under the `tickets` prefix and turn up in every invalidation
- * cascade. Parking it outside that prefix keeps the cache honest: there is no
- * ticket query when there is no ticket.
- */
-const IDLE_DETAIL_KEY = ["no-ticket-selected"] as const
+import { IDLE_DETAIL_KEY, STALE_TIME, ticketKeys, traceOf } from "./keys"
 
 const toLoadState = (
   status: "pending" | "error" | "success",
@@ -168,9 +137,14 @@ export function useQueryTickets({
   const writeError =
     createMutation.error ?? statusMutation.error ?? removeMutation.error
 
+  const list = listQuery.data ?? []
+
   return {
-    list: listQuery.data ?? [],
+    list,
     listState: toLoadState(listQuery.status),
+    // Straight off the list that's already loaded. Nothing clever — but it's
+    // what lets the pane draw a header while the body is still in flight.
+    summary: list.find((ticket) => ticket.id === selectedId),
     detail: detailQuery.data,
     detailState: toLoadState(detailQuery.status, selectedId !== null),
     isMutating:

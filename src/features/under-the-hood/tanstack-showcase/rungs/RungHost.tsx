@@ -87,7 +87,12 @@ function Rung2Host({ server, bus, selectedId, children }: HostProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Rung2Inner collection={collection} bus={bus} selectedId={selectedId}>
+      <Rung2Inner
+        collection={collection}
+        server={server}
+        bus={bus}
+        selectedId={selectedId}
+      >
         {children}
       </Rung2Inner>
     </QueryClientProvider>
@@ -96,16 +101,18 @@ function Rung2Host({ server, bus, selectedId, children }: HostProps) {
 
 function Rung2Inner({
   collection,
+  server,
   bus,
   selectedId,
   children,
 }: {
   collection: ReturnType<typeof createTicketCollection>
+  server: Server
   bus: EventBus
   selectedId: number | null
   children: (view: TicketsView) => ReactNode
 }) {
   useQueryInstrumentation(bus)
-  const view = useDbTickets({ collection, bus, selectedId })
+  const view = useDbTickets({ collection, server, bus, selectedId })
   return <>{children(view)}</>
 }

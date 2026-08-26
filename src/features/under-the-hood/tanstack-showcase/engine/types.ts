@@ -25,17 +25,43 @@ export type Comment = {
   at: string
 }
 
-export type Ticket = {
+/**
+ * What a list endpoint sends: enough to draw a row, and nothing more.
+ *
+ * The split is the point. A real `GET /tickets` does not ship every comment on
+ * every ticket — it sends a page of summaries with an excerpt, and the body
+ * arrives only when you open something. Without that split the detail request
+ * in this demo would be pure theatre: the list would already hold the answer,
+ * and a viewer reading the network panel would rightly ask why we asked twice.
+ */
+export type TicketSummary = {
   id: number
   title: string
   status: TicketStatus
   assignee: string
   /**
+   * The first line of the body, as the server would cut it — the second line of
+   * each inbox row. Sent by the list because every list needs *something* past
+   * the title, and computed server-side so no client has to hold a body to
+   * render a preview.
+   */
+  preview: string
+}
+
+/**
+ * What a detail endpoint sends: the summary, plus everything the list left out.
+ *
+ * An intersection rather than a separate shape, so anything that only needs the
+ * header — the title bar, a row, the status dropdown — accepts a summary and a
+ * full ticket interchangeably. That is what lets the detail pane paint its
+ * header from the list row while the body is still in flight.
+ */
+export type Ticket = TicketSummary & {
+  /**
    * The description, as separate lines.
    *
    * An array rather than one string so the detail pane can lay it out as real
-   * paragraphs, and so the inbox preview can show just the first line without
-   * having to cut a sentence in half.
+   * paragraphs.
    */
   body: string[]
   comments: Comment[]

@@ -1,4 +1,4 @@
-import type { Ticket, TicketStatus } from "../engine/types"
+import type { Ticket, TicketStatus, TicketSummary } from "../engine/types"
 
 /** Loading state, reduced to the three cases the UI actually branches on. */
 export type LoadState = "idle" | "loading" | "ready" | "error"
@@ -13,8 +13,25 @@ export type LoadState = "idle" | "loading" | "ready" | "error"
  * each rung fills this in, not in the shape itself.
  */
 export type TicketsView = {
-  list: Ticket[]
+  /** Summaries — the list endpoint never sends a body. */
+  list: TicketSummary[]
   listState: LoadState
+  /**
+   * The selected row's header, if the rung can produce one without asking.
+   *
+   * `undefined` at rung 0, which has nowhere to read it from but its own local
+   * state — so the pane waits for the whole ticket and shows a skeleton. From
+   * rung 1 up it comes out of the cache, so the title, status and assignee are
+   * on screen the moment you click and only the body is in flight. At rung 2 it
+   * is a live row on top of that: an optimistic status change lands here in the
+   * same tick, where rung 1 waits for the refetch its invalidation triggered.
+   *
+   * That progression — nothing, then cached, then live — is the read half of
+   * the ladder, and it is why this is on the contract rather than derived in
+   * the view from `list`.
+   */
+  summary: TicketSummary | undefined
+  /** The full ticket, once a detail request has landed. */
   detail: Ticket | undefined
   detailState: LoadState
   isMutating: boolean

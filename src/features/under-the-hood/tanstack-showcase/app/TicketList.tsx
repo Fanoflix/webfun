@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Bar } from "./TicketDetail"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { LoadState } from "../rungs/contract"
-import type { Ticket } from "../engine/types"
+import type { TicketSummary } from "../engine/types"
 import { AssigneeAvatar, StatusDot } from "./TicketMeta"
 
 /** The inbox column. View only. */
@@ -15,7 +15,7 @@ export function TicketList({
   selectedId,
   onSelect,
 }: {
-  tickets: Ticket[]
+  tickets: TicketSummary[]
   state: LoadState
   selectedId: number | null
   onSelect: (id: number) => void
@@ -61,7 +61,7 @@ export function TicketList({
                       {ticket.title}
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                      #{ticket.id} · {ticket.body[0]}
+                      #{ticket.id} · {ticket.preview}
                     </span>
                   </span>
                   <AssigneeAvatar name={ticket.assignee} />

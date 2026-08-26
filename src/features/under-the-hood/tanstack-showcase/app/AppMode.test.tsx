@@ -11,6 +11,7 @@ const ticket: Ticket = {
   title: "Login redirect loops on Safari",
   status: "open",
   assignee: "sam",
+  preview: "Only on Safari 17.",
   body: ["Only on Safari 17."],
   comments: [],
 }
@@ -18,6 +19,7 @@ const ticket: Ticket = {
 const view = (over: Partial<TicketsView> = {}): TicketsView => ({
   list: [ticket],
   listState: "ready",
+  summary: ticket,
   detail: ticket,
   detailState: "ready",
   isMutating: false,
