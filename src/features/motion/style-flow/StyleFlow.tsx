@@ -232,7 +232,9 @@ function StyleGlyph({
     return `'wght' ${Math.round(w)}, 'slnt' ${(s * slantAngle).toFixed(2)}`
   })
   const serifVar = useTransform(mvWeight, (w) => `'wght' ${Math.round(w)}`)
-  const serifStyle = useTransform(mvSlant, (s) => (s >= 0.5 ? "italic" : "normal"))
+  const serifStyle = useTransform(mvSlant, (s) =>
+    s >= 0.5 ? "italic" : "normal"
+  )
   const sansOpacity = useTransform(mvFamily, (f) => 1 - f)
 
   return (

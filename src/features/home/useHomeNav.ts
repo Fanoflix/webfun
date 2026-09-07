@@ -20,7 +20,10 @@ export function useHomeNav(): HomeNav {
   const groups = useMemo<NavGroup[]>(
     () =>
       navGroups
-        .map((g) => ({ ...g, items: g.items.filter((it) => isVisible(it.tool)) }))
+        .map((g) => ({
+          ...g,
+          items: g.items.filter((it) => isVisible(it.tool)),
+        }))
         .filter((g) => g.items.length > 0),
     // `isVisible` closes over `unlocked`, so that's the real dependency.
     [unlocked]

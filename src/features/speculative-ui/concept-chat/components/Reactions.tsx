@@ -52,7 +52,7 @@ export function Reactions({
             >
               <span className="flex items-center gap-1 px-1.5 py-0.5 whitespace-nowrap">
                 <span>{reaction.emoji}</span>
-                <span className="tabular-nums text-muted-foreground">
+                <span className="text-muted-foreground tabular-nums">
                   {reaction.by.length}
                 </span>
               </span>

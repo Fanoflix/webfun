@@ -60,10 +60,12 @@ export function CharacterFlowDemo() {
     <div className="flex w-full max-w-5xl flex-col gap-8 lg:flex-row lg:items-start lg:gap-0">
       <div className="min-w-0 flex-1 space-y-8">
         <ToolIntro title="CharacterFlow">
-          <IntroLink href="https://number-flow.barvian.me/">NumberFlow</IntroLink>{" "}
+          <IntroLink href="https://number-flow.barvian.me/">
+            NumberFlow
+          </IntroLink>{" "}
           made numbers roll over like an odometer, and it's lovely. This does it
-          for any word — letters that survive the change slide across to their new
-          seat, everything else rolls away.
+          for any word — letters that survive the change slide across to their
+          new seat, everything else rolls away.
         </ToolIntro>
 
         <div className="space-y-2">

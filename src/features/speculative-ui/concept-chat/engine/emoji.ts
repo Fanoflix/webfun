@@ -15,14 +15,48 @@ export const EMOJI_GROUPS: readonly EmojiGroup[] = [
   {
     label: "Smileys",
     emoji: [
-      "😀", "😂", "🥲", "😅", "😊", "🙂", "😉", "😍",
-      "😘", "😜", "🤪", "🤗", "🤔", "🫠", "😐", "😴",
-      "😭", "😤", "😱", "🥶", "😳", "🥺", "😬", "🙃",
+      "😀",
+      "😂",
+      "🥲",
+      "😅",
+      "😊",
+      "🙂",
+      "😉",
+      "😍",
+      "😘",
+      "😜",
+      "🤪",
+      "🤗",
+      "🤔",
+      "🫠",
+      "😐",
+      "😴",
+      "😭",
+      "😤",
+      "😱",
+      "🥶",
+      "😳",
+      "🥺",
+      "😬",
+      "🙃",
     ],
   },
   {
     label: "Gestures",
-    emoji: ["👍", "👎", "👌", "🤌", "👏", "🙌", "🤝", "🫡", "🙏", "💪", "🖖", "👀"],
+    emoji: [
+      "👍",
+      "👎",
+      "👌",
+      "🤌",
+      "👏",
+      "🙌",
+      "🤝",
+      "🫡",
+      "🙏",
+      "💪",
+      "🖖",
+      "👀",
+    ],
   },
   {
     label: "Hearts",
@@ -30,7 +64,20 @@ export const EMOJI_GROUPS: readonly EmojiGroup[] = [
   },
   {
     label: "Objects",
-    emoji: ["🔥", "🎉", "🎯", "⚡", "💀", "🧠", "👻", "🚀", "🍿", "☕", "🐈", "🌚"],
+    emoji: [
+      "🔥",
+      "🎉",
+      "🎯",
+      "⚡",
+      "💀",
+      "🧠",
+      "👻",
+      "🚀",
+      "🍿",
+      "☕",
+      "🐈",
+      "🌚",
+    ],
   },
 ] as const
 
@@ -41,4 +88,11 @@ export const ALL_EMOJI: readonly string[] = EMOJI_GROUPS.flatMap((g) => g.emoji)
  * What the fake chatter picks from when it reacts. Kept warm and low-stakes —
  * it reacts to whatever you wrote without having read it.
  */
-export const CHATTER_REACTIONS: readonly string[] = ["😂", "🔥", "👀", "💯", "🫡", "❤️"]
+export const CHATTER_REACTIONS: readonly string[] = [
+  "😂",
+  "🔥",
+  "👀",
+  "💯",
+  "🫡",
+  "❤️",
+]

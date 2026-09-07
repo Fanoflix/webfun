@@ -39,7 +39,9 @@ function makeFlight(i: number): Flight {
 }
 
 /** A dataset larger than one page so pagination re-projects into the same slots. */
-const FULL_DATASET: Flight[] = Array.from({ length: 24 }, (_, i) => makeFlight(i))
+const FULL_DATASET: Flight[] = Array.from({ length: 24 }, (_, i) =>
+  makeFlight(i)
+)
 
 /**
  * Owns the demo's data + current page and exposes the actions the view wires to
@@ -70,7 +72,10 @@ export function useFutureTableDemo() {
   }, [])
 
   const addRow = useCallback(() => {
-    setData((d) => [...d, { ...makeFlight(d.length), id: `f${d.length}-${Date.now()}` }])
+    setData((d) => [
+      ...d,
+      { ...makeFlight(d.length), id: `f${d.length}-${Date.now()}` },
+    ])
   }, [])
 
   // Mutate a few fields in place — the same records, new values — so you can see
@@ -89,7 +94,10 @@ export function useFutureTableDemo() {
     () => setPageIndex((p) => Math.min(p + 1, table.pageCount - 1)),
     [table.pageCount]
   )
-  const prevPage = useCallback(() => setPageIndex((p) => Math.max(p - 1, 0)), [])
+  const prevPage = useCallback(
+    () => setPageIndex((p) => Math.max(p - 1, 0)),
+    []
+  )
 
   return {
     table,

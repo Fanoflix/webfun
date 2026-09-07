@@ -1,0 +1,26 @@
+name: Tool idea
+description: Suggest a new experiment for the site.
+labels: [idea]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Ideas are welcome, but the site is deliberately small and each tool is
+        a designed thing with its own explainer. Expect a conversation before
+        any code.
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What is the technique or concept?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it interesting to *see*?
+      description: >
+        The best tools here have a visible before/after, or show something
+        normally hidden. What would someone watch happen?
+    validations:
+      required: true

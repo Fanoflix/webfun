@@ -56,9 +56,9 @@ describe("ChatFrame", () => {
 
   it("opens on a playable message, so the idea is on screen immediately", () => {
     render(<ChatFrame />)
-    expect(screen.getAllByRole("button", { name: "Play message" })).toHaveLength(
-      1
-    )
+    expect(
+      screen.getAllByRole("button", { name: "Play message" })
+    ).toHaveLength(1)
   })
 
   it("plays the seed through to the punchline", () => {
@@ -155,9 +155,7 @@ describe("ChatFrame", () => {
 
       // It lands unplayed, so the reset leaves the demo exactly where a first
       // visit starts rather than a step ahead of it.
-      expect(
-        screen.getByRole("button", { name: "Play message" })
-      ).toBeTruthy()
+      expect(screen.getByRole("button", { name: "Play message" })).toBeTruthy()
     } finally {
       vi.useRealTimers()
     }

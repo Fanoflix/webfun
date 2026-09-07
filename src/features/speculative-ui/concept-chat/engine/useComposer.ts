@@ -98,7 +98,10 @@ export function useComposer(onSend: (body: Segment[]) => void): ComposerApi {
     }
 
     const { selectionStart, selectionEnd } = el
-    setText((current) => current.slice(0, selectionStart) + value + current.slice(selectionEnd))
+    setText(
+      (current) =>
+        current.slice(0, selectionStart) + value + current.slice(selectionEnd)
+    )
 
     const caret = selectionStart + value.length
     // After React has written the new value back into the textarea.

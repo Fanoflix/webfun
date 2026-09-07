@@ -24,7 +24,11 @@ function fuzzyMatch(query: string, text: string): boolean {
 }
 
 /** An item matches if the query fuzzily hits its title, category, or a keyword. */
-function itemMatches(item: NavItem, groupLabel: string, query: string): boolean {
+function itemMatches(
+  item: NavItem,
+  groupLabel: string,
+  query: string
+): boolean {
   if (!query.trim()) return true
   const haystacks = [item.title, groupLabel, ...(item.keywords ?? [])]
   return haystacks.some((h) => fuzzyMatch(query, h))
