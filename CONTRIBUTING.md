@@ -39,10 +39,6 @@ yarn install
 yarn dev          # http://localhost:3005
 ```
 
-The sidebar only lists *released* tools. To see everything locally, add slugs
-to `VITE_RELEASED` in a local `.env` (copy `.env.example`), or load
-`/?key=<VITE_UNLOCK_SECRET>`.
-
 ## Before you open a PR
 
 Run the same four checks CI runs:

@@ -1,8 +1,7 @@
 # Concept chat
 
 Speculative UI. Category: **Speculative UI** (alongside Concept table 1).
-Route `/concept-chat` · `ToolKey` `"concept-chat"` · **permanently flagged** — never
-enters `VITE_RELEASED`, reachable only via the unlock key.
+Route `/concept-chat` — public, like everything else on the site.
 
 ---
 
@@ -409,7 +408,7 @@ transitions · scrubbing · editing a sent timeline message.
 ## Tasks
 
 **1 — Scaffold**
-- [ ] `concept-chat` `ToolKey`, route, sidebar entry, `ToolIntro`, home blurb
+- [ ] `concept-chat` route, sidebar entry, `ToolIntro`, home blurb
 - [ ] Full-width/height container inside the tool page
 
 **2 — Engine (pure, unit-tested)** ✅ *done — 24 tests*

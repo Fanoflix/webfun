@@ -26,6 +26,20 @@ const LOUPE_SIZE = 288
 const MIN_ZOOM = 1
 const MAX_ZOOM = 32
 
+/**
+ * The image the tool opens with.
+ *
+ * An empty canvas made the first ten seconds a chore: the whole point is a
+ * before/after, and there was nothing to compare until you went and found a
+ * file. It's a synthetic still life on purpose — long smooth ramps are exactly
+ * where naive quantisation bands worst, so the technique has something to show
+ * immediately, and nothing here is anyone else's photo.
+ *
+ * Through the base path: on Pages the site is served from `/webfun/`, so a bare
+ * `/dither-default.jpg` would resolve against the domain root.
+ */
+const DEFAULT_IMAGE = `${import.meta.env.BASE_URL.replace(/\/+$/, "")}/dither-default.jpg`
+
 const clamp = (v: number, min: number, max: number) =>
   Math.min(max, Math.max(min, v))
 
@@ -210,10 +224,7 @@ export function useDither() {
   const setZoom = (value: number) =>
     setZoomLevel(clamp(value, MIN_ZOOM, MAX_ZOOM))
 
-  const pickFile = (file: File) => {
-    if (urlRef.current) URL.revokeObjectURL(urlRef.current)
-    const url = URL.createObjectURL(file)
-    urlRef.current = url
+  const load = (url: string) => {
     const img = new Image()
     img.onload = () => {
       imgRef.current = img
@@ -221,6 +232,21 @@ export function useDither() {
     }
     img.src = url
   }
+
+  const pickFile = (file: File) => {
+    // Only object URLs need revoking; the default image is a plain path, and
+    // calling revoke on it would be a silent no-op that reads like a bug.
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current)
+    const url = URL.createObjectURL(file)
+    urlRef.current = url
+    load(url)
+  }
+
+  // Open with something on screen. Runs once; a file picked before it decodes
+  // still wins, because `load` only commits in its own `onload`.
+  useEffect(() => {
+    load(DEFAULT_IMAGE)
+  }, [])
 
   const exportPng = () => canvasRef.current?.exportPng("dithered.png")
 

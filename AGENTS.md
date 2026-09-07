@@ -142,28 +142,14 @@ Corollaries the user cares about, and will call out:
    export const Route = createFileRoute("/<slug>")({ component: Thing })
    ```
    `routeTree.gen.ts` regenerates itself when the dev server runs.
-3. **Flag key** — add the slug to `ToolKey` *and* `ALL_TOOLS` in
-   `src/features/flags/flags.ts`. The slug **is** the route path, minus the
-   leading slash; that identity is what lets `toolFromPathname` work.
-4. **Nav entry** — add to the right group in `src/features/sidebar/nav-items.ts`:
-   `title`, `to`, `tool`, `icon` (lucide), `blurb` (the home-card teaser), and
+3. **Nav entry** — add to the right group in `src/features/sidebar/nav-items.ts`:
+   `title`, `to`, `icon` (lucide), `blurb` (the home-card teaser), and
    `keywords` (hidden search aliases — jargon and synonyms a person might type
-   that don't appear in the title). `tool` is mandatory by design: a tool cannot
-   join the nav without someone deciding when it goes public.
+   that don't appear in the title).
+4. **Page meta** — give the route a `head()` via `pageMeta` from
+   `src/features/seo/meta.ts`, and add the path to `PRERENDERED_PATHS` in
+   `vite.config.ts`. Without both, the page has no unfurl and deep links 404.
 5. **`how-it-works.md`** — in the feature folder. Non-optional; see below.
-
-Then also mention the new slug in `.env.example`'s valid-slugs comment.
-
-## Release flags
-
-`src/features/flags/flags.ts` runs a staged launch. `VITE_RELEASED` is a
-comma-separated slug list of what's public; unset in dev means *everything* is
-visible, unset in a production build means *nothing* is (fails closed on
-purpose). `NEVER_RELEASED` pins tools to unlock-only forever. `/?key=<secret>`
-unlocks everything for a browser and persists it; `/?lock=1` clears it.
-
-This is obscurity, not security — every tool ships in the JS bundle regardless.
-It only controls what is listed and reachable.
 
 ## how-it-works.md — the format
 

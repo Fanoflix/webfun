@@ -29,6 +29,10 @@ export function useLowResVideo() {
   const [hasVideo, setHasVideo] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
+  // Kept separately from `muted` so unmuting restores the level you had rather
+  // than jumping to full volume. Starts at a polite 0.6 — this is a page you
+  // land on from a link, not a player you chose to open.
+  const [volume, setVolumeState] = useState(0.6)
   const [lockAspect, setLockAspect] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -55,11 +59,14 @@ export function useLowResVideo() {
     []
   )
 
-  // Keep the element's muted property in sync with state (also satisfies the
-  // autoplay policy, since the default state is muted).
+  // Keep the element's audio properties in sync with state. Muted by default,
+  // which is also what satisfies the autoplay policy.
   useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = muted
-  }, [muted])
+    const video = videoRef.current
+    if (!video) return
+    video.muted = muted
+    video.volume = volume
+  }, [muted, volume])
 
   // Subscribe to the video element's events once; state setters are stable and
   // the live lock flag is read through a ref.
@@ -158,12 +165,24 @@ export function useLowResVideo() {
 
   const toggleMute = () => setMuted((m) => !m)
 
+  /**
+   * Dragging the slider is itself an unmute — reaching for volume and getting
+   * silence because a separate button is still latched is the single most
+   * annoying thing a player can do. Dragging to zero mutes, symmetrically.
+   */
+  const setVolume = (next: number) => {
+    const clamped = Math.min(1, Math.max(0, next))
+    setVolumeState(clamped)
+    setMuted(clamped === 0)
+  }
+
   return {
     settings,
     shape,
     hasVideo,
     playing,
     muted,
+    volume,
     lockAspect,
     currentTime,
     duration,
@@ -177,5 +196,6 @@ export function useLowResVideo() {
     seek,
     togglePlay,
     toggleMute,
+    setVolume,
   }
 }

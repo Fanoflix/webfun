@@ -3,6 +3,21 @@ import type { DragEvent, ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 
+/** What a browser reports when it has no idea what the file is. */
+const GENERIC_TYPE = "application/octet-stream"
+
+/**
+ * Fallback matching for files the browser hasn't identified.
+ *
+ * Typed as possibly-undefined because `accept` is a template-literal type: a
+ * caller can legitimately pass `audio/*` or `font/*`, which has no entry here
+ * and should simply fall through to "not accepted" rather than crash.
+ */
+const EXTENSIONS: Record<string, RegExp | undefined> = {
+  image: /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i,
+  video: /\.(mp4|webm|mov|m4v|ogv|avi|mkv)$/i,
+}
+
 type Props = {
   /** An `accept` value with a wildcard subtype, e.g. `image/*`. */
   accept: `${string}/*`
@@ -40,12 +55,30 @@ export function FileDropZone({
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
-  // "image/*" → "image/". Anything else dropped here is ignored rather than
-  // handed to a decoder that will fail on it.
-  const prefix = `${accept.slice(0, accept.indexOf("/"))}/`
+  // "image/*" → "image"
+  const kind = accept.slice(0, accept.indexOf("/"))
 
+  /**
+   * Accept by MIME type, falling back to the extension when the browser hasn't
+   * actually identified the file.
+   *
+   * A strict `type.startsWith("video/")` check looks right and drops real files
+   * on the floor. The OS decides the type, and it often declines: `.mov` and
+   * `.mkv` frequently arrive as `application/octet-stream`, and files dragged
+   * out of an archive or off some Linux file managers arrive with no type at
+   * all. Both used to fail silently, which reads as a broken upload with
+   * nothing on screen to explain it.
+   *
+   * Anything with neither a matching type nor a matching extension is still
+   * ignored, rather than handed to a decoder that will fail on it.
+   */
   const takeFile = (file: File | null | undefined) => {
-    if (file?.type.startsWith(prefix)) onPick(file)
+    if (!file) return
+    const identified = file.type && file.type !== GENERIC_TYPE
+    const ok = identified
+      ? file.type.startsWith(`${kind}/`)
+      : EXTENSIONS[kind]?.test(file.name)
+    if (ok) onPick(file)
   }
 
   const onDrop = (e: DragEvent) => {
