@@ -2,6 +2,7 @@ import { useRef } from "react"
 import { Download, Eye, ImagePlus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Toggle } from "@/components/ui/toggle"
 import {
   Select,
   SelectContent,
@@ -29,8 +30,8 @@ type Props = {
   hasImage: boolean
   onPickFile: (file: File) => void
   onExport: () => void
-  onCompareStart: () => void
-  onCompareEnd: () => void
+  comparing: boolean
+  onComparingChange: (comparing: boolean) => void
   onCollapse: () => void
 }
 
@@ -40,8 +41,8 @@ export function Controls({
   hasImage,
   onPickFile,
   onExport,
-  onCompareStart,
-  onCompareEnd,
+  comparing,
+  onComparingChange,
   onCollapse,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -76,22 +77,19 @@ export function Controls({
         />
       </div>
 
-      <Button
+      {/* A latch, not a hold. Holding still works — on the image itself, where
+          your pointer already is — so this covers the case that gesture can't:
+          keeping the original up while you drag a slider. */}
+      <Toggle
         variant="outline"
         disabled={!hasImage}
-        aria-label="Hold to compare with original"
-        className="w-full touch-none select-none"
-        onPointerDown={(e) => {
-          e.preventDefault()
-          onCompareStart()
-        }}
-        onPointerUp={onCompareEnd}
-        onPointerLeave={onCompareEnd}
-        onPointerCancel={onCompareEnd}
+        pressed={comparing}
+        onPressedChange={onComparingChange}
+        className="w-full"
       >
         <Eye />
-        Hold to compare
-      </Button>
+        {comparing ? "Showing original" : "Compare"}
+      </Toggle>
 
       <SelectField
         label="Algorithm"

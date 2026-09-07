@@ -21,3 +21,6 @@ short-demo.md
 # Yarn (node-modules linker)
 .yarn/*
 !.yarn/patches
+
+# private launch working file
+launch-plan.md

@@ -72,7 +72,10 @@ export function DitherCanvas({
     []
   )
 
-  const endHold = () => comparing && onHoldEnd()
+  // Unconditional: with the compare toggle latched on, a press *hides* the
+  // original, so `comparing` is false exactly when a release still has to be
+  // reported. Guarding on it would strand the peek.
+  const endHold = () => onHoldEnd()
   const startHold = (e: ReactPointerEvent) => {
     e.preventDefault()
     onHoldStart()

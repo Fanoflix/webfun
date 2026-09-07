@@ -1,4 +1,5 @@
 import { ToolIntro } from "@/components/layout/ToolIntro"
+import { FileDropZone } from "@/components/upload/FileDropZone"
 import { FloatingPanels } from "@/components/floating-panels/FloatingPanels"
 import { ZoomBox } from "@/components/loupe/ZoomBox"
 import { ZoomSelection } from "@/components/loupe/ZoomSelection"
@@ -13,6 +14,7 @@ export function Dither() {
     source,
     stats,
     comparing,
+    compareLatched,
     collapsed,
     region,
     zoomLevel,
@@ -23,7 +25,9 @@ export function Dither() {
     onChange,
     pickFile,
     exportPng,
-    setComparing,
+    setCompareLatched,
+    startPeek,
+    endPeek,
     setCollapsed,
     setRegion,
     setZoomLevel,
@@ -34,17 +38,16 @@ export function Dither() {
       <ToolIntro title="Dithering" className="w-full max-w-3xl">
         Old consoles had almost no colours, so they cheated: scatter dots of the
         colours you do have, and let someone's eyes blend the ones you don't.
-        Hold the image to see what it really looks like underneath.
+        Hold the image — or leave Compare on — to see what it really looks like
+        underneath.
       </ToolIntro>
 
-      <div
-        className="relative grid place-items-center bg-black p-4"
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault()
-          const file = e.dataTransfer.files.item(0)
-          if (file && file.type.startsWith("image/")) pickFile(file)
-        }}
+      <FileDropZone
+        accept="image/*"
+        onPick={pickFile}
+        empty={!source}
+        hint="Drop an image, or click to upload"
+        className="grid place-items-center bg-black p-4"
       >
         <DitherCanvas
           ref={canvasRef}
@@ -52,8 +55,8 @@ export function Dither() {
           comparing={comparing}
           displayWidth={displayWidth}
           displayHeight={displayHeight}
-          onHoldStart={() => setComparing(true)}
-          onHoldEnd={() => setComparing(false)}
+          onHoldStart={startPeek}
+          onHoldEnd={endPeek}
         >
           {source && (
             <ZoomSelection
@@ -64,14 +67,7 @@ export function Dither() {
             />
           )}
         </DitherCanvas>
-        {!source && (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <p className="text-xs tracking-widest text-white/50 uppercase">
-              Drop an image or click upload
-            </p>
-          </div>
-        )}
-      </div>
+      </FileDropZone>
 
       <FloatingPanels
         collapsed={collapsed}
@@ -83,8 +79,8 @@ export function Dither() {
           hasImage={!!source}
           onPickFile={pickFile}
           onExport={exportPng}
-          onCompareStart={() => setComparing(true)}
-          onCompareEnd={() => setComparing(false)}
+          comparing={compareLatched}
+          onComparingChange={setCompareLatched}
           onCollapse={() => setCollapsed(true)}
         />
         <ZoomBox

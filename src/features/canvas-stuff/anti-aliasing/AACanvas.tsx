@@ -82,7 +82,7 @@ export function AACanvas({
     []
   )
 
-  const endHold = () => comparing && onHoldEnd()
+  const endHold = () => onHoldEnd()
   const startHold = (e: ReactPointerEvent) => {
     e.preventDefault()
     onHoldStart()

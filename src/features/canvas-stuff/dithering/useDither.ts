@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 
+import { useCompare } from "@/hooks/useCompare"
 import type { Region } from "@/components/loupe/region"
 import type { DitherCanvasHandle } from "./DitherCanvas"
 import { countUniqueColors, dither } from "./pipeline"
@@ -61,7 +62,7 @@ const workDims = (source: Source, pixelScale: number) => ({
 export function useDither() {
   const [settings, setSettings] = useState<DitherSettings>(DEFAULT_SETTINGS)
   const [source, setSource] = useState<Source | null>(null)
-  const [comparing, setComparing] = useState(false)
+  const compare = useCompare()
   const [collapsed, setCollapsed] = useState(false)
   const [stats, setStats] = useState<DitherStats | null>(null)
   // Normalised centre of the loupe selection; the square region is derived from
@@ -138,8 +139,8 @@ export function useDither() {
   // Redraw the loupe whenever the frame, the selection, or the compare state
   // changes. The selection is square, so it always fills the square loupe
   // exactly; nearest-neighbour keeps the dithered dots crisp under
-  // magnification. While holding to compare we sample the original image
-  // instead — same region, for a like-for-like before/after.
+  // magnification. Whenever the view is comparing — held or latched — we sample
+  // the original image instead, same region, for a like-for-like before/after.
   useEffect(() => {
     const loupe = loupeRef.current
     const main = canvasRef.current?.getCanvas()
@@ -154,7 +155,7 @@ export function useDither() {
     ctx.imageSmoothingEnabled = false
     ctx.clearRect(0, 0, LOUPE_SIZE, LOUPE_SIZE)
 
-    if (comparing && original) {
+    if (compare.comparing && original) {
       ctx.drawImage(
         original,
         region.x * source.w,
@@ -186,7 +187,7 @@ export function useDither() {
     region.w,
     region.h,
     frameVersion,
-    comparing,
+    compare.comparing,
     source,
     settings.pixelScale,
   ])
@@ -236,7 +237,8 @@ export function useDither() {
     settings,
     source,
     stats,
-    comparing,
+    comparing: compare.comparing,
+    compareLatched: compare.latched,
     collapsed,
     region,
     zoomLevel,
@@ -247,7 +249,9 @@ export function useDither() {
     onChange,
     pickFile,
     exportPng,
-    setComparing,
+    setCompareLatched: compare.setLatched,
+    startPeek: compare.startPeek,
+    endPeek: compare.endPeek,
     setCollapsed,
     setRegion,
     setZoomLevel: setZoom,
