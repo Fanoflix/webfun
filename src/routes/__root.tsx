@@ -3,12 +3,9 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import { AppLayout } from "@/components/layout/AppLayout"
+import { SITE_DESCRIPTION, SITE_TITLE, pageMeta } from "@/features/seo/meta"
 import { themeInitScript } from "@/features/theme/theme"
 import appCss from "../styles.css?url"
-
-const TITLE = "webfun — web stuff, no impact, just satisfying"
-const DESCRIPTION =
-  "Small interactive experiments in graphics, motion and speculative UI. Things that looked cool enough to rebuild."
 
 /**
  * Everything under `public/` has to be reached through the base path.
@@ -26,20 +23,13 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
       /**
        * Open Graph and Twitter, because the way anyone actually arrives here is
-       * a link pasted into a chat — and an unfurl showing a bare URL is the
-       * difference between someone opening it and scrolling past.
+       * a link pasted into a chat or a feed — and an unfurl showing a bare URL
+       * is the difference between someone opening it and scrolling past. A tool
+       * route overrides these with its own; see `features/seo/meta.ts`.
        */
-      { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "webfun" },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: TITLE },
-      { name: "twitter:description", content: DESCRIPTION },
+      ...pageMeta({ title: SITE_TITLE, description: SITE_DESCRIPTION }),
       /**
        * Tints browser chrome on mobile. One value, not a pair scoped to
        * `prefers-color-scheme`: the app is dark unless someone has explicitly

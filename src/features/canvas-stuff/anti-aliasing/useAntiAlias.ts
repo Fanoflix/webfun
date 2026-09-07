@@ -7,12 +7,18 @@ import { SCENE_ASPECT, findEdge, render } from "./raster"
 import type { AASettings, Scene } from "./raster"
 
 const DEFAULT_SETTINGS: AASettings = {
-  scene: "pentagon",
-  samples: 4,
-  angle: 18,
+  // The shaded sphere opens the tool: a curved silhouette is where jaggies read
+  // worst, and the lit interior gives the eye somewhere to be that isn't the
+  // staircase — so the edge is the thing you notice, not the only thing there.
+  scene: "sphere",
+  samples: 5,
+  angle: 154,
   size: 0.6,
-  resolution: 200,
+  resolution: 260,
 }
+
+/** Opening magnification of the loupe. */
+const DEFAULT_ZOOM = 6.9
 
 // Fixed on-screen size; the working buffer is scaled up (pixelated) to fill it,
 // which is what makes the jaggies visible.
@@ -47,7 +53,7 @@ export function useAntiAlias() {
   const [collapsed, setCollapsed] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [center, setCenter] = useState({ x: 0.5, y: 0.5 })
-  const [zoomLevel, setZoomLevel] = useState(8)
+  const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM)
   // Bumped after each repaint so the loupe refreshes.
   const [frameVersion, setFrameVersion] = useState(0)
 
@@ -63,17 +69,17 @@ export function useAntiAlias() {
   useEffect(() => {
     const { w, h } = workDims(settings.resolution)
     const smooth = render(w, h, settings)
-    canvasRef.current?.paint(smooth, w, h)
+    canvasRef.current?.paint(smooth.data, w, h)
     canvasRef.current?.paintCompare(
-      render(w, h, { ...settings, samples: 1 }),
+      render(w, h, { ...settings, samples: 1 }).data,
       w,
       h
     )
 
-    // Park the loupe on an actual edge, or it opens on flat white and the
+    // Park the loupe on an actual edge, or it opens on flat fill and the
     // before/after it exists to show is invisible until you go looking.
     if (parkedOn.current !== settings.scene) {
-      const edge = findEdge(smooth, w, h)
+      const edge = findEdge(smooth.coverage, w, h)
       if (edge) setCenter(edge)
       parkedOn.current = settings.scene
     }

@@ -247,14 +247,32 @@ export const PixelScreen = memo(function PixelScreen({
         style={{ width: screenW, height: screenW / aspect }}
       >
         <canvas ref={canvasRef} className="block h-full w-full" />
+        {/*
+          Sits *outside* the screen box, in the container's padding, rather than
+          overlapping the picture. Inside, it fought two things at once: the
+          transport bar overlaying the bottom edge, and the video itself — a
+          thin line on unknown footage is invisible about half the time.
+          Out here the backdrop is the container, so it always reads.
+
+          z-30 puts it above the transport (z-20) so the corner belongs to the
+          handle, and the transport's own controls stop short of it.
+        */}
         <div
           onPointerDown={startResize}
           aria-label="Resize screen"
-          // z-10 keeps the handle grabbable through the empty-state upload
-          // overlay, which covers the whole screen until a video is loaded.
-          className="absolute -right-1 -bottom-1 z-10 flex size-5 cursor-nwse-resize touch-none items-end justify-end"
+          className="group/handle absolute -right-3 -bottom-3 z-30 flex size-7 cursor-nwse-resize touch-none items-end justify-end"
         >
-          <div className="size-3 rounded-xs border-r-2 border-b-2 border-primary" />
+          {/*
+            drop-shadow, not a border: the corner sits over whatever the
+            container's edge happens to be, and a dark halo keeps the teal
+            legible on a light frame without drawing a box around it.
+
+            Hover changes colour only — never size. The container scrolls its
+            overflow, and this sits within a few pixels of its padding edge, so
+            a `scale` on hover was enough to summon scrollbars and shove the
+            whole page sideways.
+          */}
+          <div className="size-4 rounded-xs border-r-[3px] border-b-[3px] border-primary/80 drop-shadow-[0_0_2px_rgba(0,0,0,0.9)] transition-colors group-hover/handle:border-primary" />
         </div>
       </div>
     </div>

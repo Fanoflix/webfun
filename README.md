@@ -21,9 +21,6 @@ yarn install
 yarn dev          # http://localhost:3005
 ```
 
-The sidebar lists only released tools. Copy `.env.example` to `.env` to see the
-rest locally.
-
 ## Contributing
 
 Bug fixes and typo fixes are very welcome; new tools start as an issue.

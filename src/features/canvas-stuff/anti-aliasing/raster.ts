@@ -8,6 +8,7 @@ export type Scene =
   | "line"
   | "edge"
   | "circle"
+  | "sphere"
   | "triangle"
   | "pentagon"
   | "checker"
@@ -16,6 +17,7 @@ export const SCENES: { value: Scene; label: string }[] = [
   { value: "line", label: "Diagonal line" },
   { value: "edge", label: "Slanted edge" },
   { value: "circle", label: "Circle" },
+  { value: "sphere", label: "Shaded sphere" },
   { value: "triangle", label: "Triangle" },
   { value: "pentagon", label: "Pentagon" },
   { value: "checker", label: "Checkerboard" },
@@ -71,6 +73,10 @@ function inside(
     case "edge":
       return v >= 0
     case "circle":
+    case "sphere":
+      // Same silhouette; the sphere differs only in what it paints *inside*,
+      // which is deliberate — the anti-aliasing is happening on this edge and
+      // nowhere else.
       return u * u + v * v <= size * size
     case "triangle":
       return insidePolygon(u, v, 3, size)
@@ -83,9 +89,54 @@ function inside(
   }
 }
 
-/** Render a scene to a fresh RGBA buffer of length `w * h * 4`. */
-export function render(w: number, h: number, s: AASettings): Uint8ClampedArray {
+/** Light direction for the shaded sphere, normalised, pointing from the surface. */
+const LIGHT: readonly [number, number, number] = [-0.53, -0.58, 0.62]
+
+/**
+ * How bright the *interior* of a scene is at `(u, v)`, 0..1.
+ *
+ * Flat scenes return 1 and cost nothing. The sphere reconstructs a surface
+ * normal from the silhouette — `nz = sqrt(1 - nx² - ny²)` — and lights it, so
+ * the interior is a smooth gradient while the edge stays a pure coverage
+ * problem.
+ *
+ * Keeping shading separate from coverage is what makes this legitimate: the
+ * silhouette is still anti-aliased by supersampling alone, and the Samples
+ * slider still does the whole job. A shaded pixel is not a partly-covered one.
+ */
+function shadeAt(scene: Scene, u: number, v: number, size: number): number {
+  if (scene !== "sphere") return 1
+
+  const nx = u / size
+  const ny = v / size
+  const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny))
+
+  const lambert = Math.max(0, -(nx * LIGHT[0] + ny * LIGHT[1]) + nz * LIGHT[2])
+  const specular = lambert ** 48
+  // A little rim light, or the dark limb vanishes into the background and the
+  // silhouette we came here to look at stops being visible at all.
+  const rim = 0.16 * (1 - nz) ** 2
+
+  return Math.min(1, 0.07 + 0.86 * lambert + 0.5 * specular + rim)
+}
+
+/**
+ * Render a scene.
+ *
+ * Returns the RGBA buffer *and* the raw per-pixel coverage. Coverage can no
+ * longer be read back out of the pixels: with a shaded scene a mid-grey pixel
+ * might be fully covered but dimly lit, so anything looking for edges (see
+ * `findEdge`) has to be handed the real thing.
+ */
+export type Render = {
+  data: Uint8ClampedArray
+  /** Per-pixel coverage, 0..1, row-major. */
+  coverage: Float32Array
+}
+
+export function render(w: number, h: number, s: AASettings): Render {
   const out = new Uint8ClampedArray(w * h * 4)
+  const coverage = new Float32Array(w * h)
   const half = Math.min(w, h) / 2
   // One output pixel, measured in the normalised (u, v) units inside().
   const pxNorm = 1 / half
@@ -99,49 +150,56 @@ export function render(w: number, h: number, s: AASettings): Uint8ClampedArray {
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
       let cov = 0
+      let shade = 0
       for (let sy = 0; sy < n; sy++) {
         for (let sx = 0; sx < n; sx++) {
           const u = (px + (sx + 0.5) * inv - w / 2) / half
           const v = (py + (sy + 0.5) * inv - h / 2) / half
           const ru = u * cos + v * sin
           const rv = -u * sin + v * cos
-          if (inside(s.scene, ru, rv, s.size, pxNorm)) cov++
+          if (inside(s.scene, ru, rv, s.size, pxNorm)) {
+            cov++
+            shade += shadeAt(s.scene, ru, rv, s.size)
+          }
         }
       }
       const a = cov / total
+      // Averaged over the covered samples only: an edge pixel's colour is its
+      // own shade blended toward the background by its coverage, not a shade
+      // diluted twice.
+      const lit = cov > 0 ? shade / cov : 0
       const i = (py * w + px) * 4
-      out[i] = BG[0] + (FG[0] - BG[0]) * a
-      out[i + 1] = BG[1] + (FG[1] - BG[1]) * a
-      out[i + 2] = BG[2] + (FG[2] - BG[2]) * a
+      coverage[py * w + px] = a
+      out[i] = BG[0] + (FG[0] - BG[0]) * lit * a
+      out[i + 1] = BG[1] + (FG[1] - BG[1]) * lit * a
+      out[i + 2] = BG[2] + (FG[2] - BG[2]) * lit * a
       out[i + 3] = 255
     }
   }
-  return out
+  return { data: out, coverage }
 }
 
 /**
  * The edge pixel nearest the middle of the frame, in normalised (0..1) coords.
  *
  * The loupe used to open at dead centre, which for every scene here is deep
- * *inside* the shape — a flat white square. That made the one instrument
- * capable of settling "is this actually anti-aliased?" show nothing at all
- * until you dragged it somewhere useful.
+ * *inside* the shape — a flat fill. That made the one instrument capable of
+ * settling "is this actually anti-aliased?" show nothing at all until you
+ * dragged it somewhere useful.
  *
- * An edge is found by coverage, not geometry, so this works for any scene
- * without a per-scene table: a pixel that is neither fully background nor
- * fully foreground is by definition one the shape's boundary passed through.
- * Ties break towards the centre, so the result is deterministic.
+ * It reads the coverage map rather than the pixels, so it works for any scene
+ * without a per-scene table *and* stays correct for shaded ones, where a
+ * mid-grey pixel is usually just a dim part of the interior rather than an
+ * edge. Ties break towards the centre, so the result is deterministic.
  *
- * Returns `null` for a frame with no partial pixels at all (a 1-sample render,
- * or an empty scene), leaving the caller's current centre alone.
+ * Returns `null` when nothing is partially covered (a 1-sample render, or an
+ * empty scene), leaving the caller's current centre alone.
  */
 export function findEdge(
-  data: Uint8ClampedArray,
+  coverage: Float32Array,
   w: number,
   h: number
 ): { x: number; y: number } | null {
-  const lo = Math.min(BG[0], FG[0])
-  const hi = Math.max(BG[0], FG[0])
   const cx = w / 2
   const cy = h / 2
 
@@ -150,8 +208,8 @@ export function findEdge(
 
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
-      const r = data[(py * w + px) * 4]
-      if (r <= lo || r >= hi) continue
+      const a = coverage[py * w + px]
+      if (a <= 0 || a >= 1) continue
       const dx = px + 0.5 - cx
       const dy = py + 0.5 - cy
       const dist = dx * dx + dy * dy

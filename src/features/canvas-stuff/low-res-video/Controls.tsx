@@ -1,13 +1,5 @@
 import { useRef, useState } from "react"
-import {
-  Minus,
-  Pause,
-  Play,
-  Plus,
-  Upload,
-  Volume2,
-  VolumeX,
-} from "lucide-react"
+import { Minus, Plus, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { DotShape } from "./PixelScreen"
@@ -25,36 +17,22 @@ type Props = {
   settings: ScreenSettings
   onChange: (patch: Partial<ScreenSettings>) => void
   hasVideo: boolean
-  playing: boolean
-  onTogglePlay: () => void
-  muted: boolean
-  onToggleMute: () => void
   lockAspect: boolean
   onToggleLockAspect: () => void
   shape: DotShape
   onShapeChange: (shape: DotShape) => void
   onPickFile: (file: File) => void
-  currentTime: number
-  duration: number
-  onSeek: (time: number) => void
 }
 
 export function Controls({
   settings,
   onChange,
   hasVideo,
-  playing,
-  onTogglePlay,
-  muted,
-  onToggleMute,
   lockAspect,
   onToggleLockAspect,
   shape,
   onShapeChange,
   onPickFile,
-  currentTime,
-  duration,
-  onSeek,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [collapsed, setCollapsed] = useState(false)
@@ -93,24 +71,6 @@ export function Controls({
           <Upload />
           {hasVideo ? "Replace video" : "Upload video"}
         </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          disabled={!hasVideo}
-          onClick={onTogglePlay}
-          aria-label={playing ? "Pause" : "Play"}
-        >
-          {playing ? <Pause /> : <Play />}
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          disabled={!hasVideo}
-          onClick={onToggleMute}
-          aria-label={muted ? "Unmute" : "Mute"}
-        >
-          {muted ? <VolumeX /> : <Volume2 />}
-        </Button>
         <input
           ref={fileRef}
           type="file"
@@ -123,27 +83,6 @@ export function Controls({
           }}
         />
       </div>
-
-      {hasVideo && (
-        <div className="flex items-center gap-2">
-          <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">
-            {formatTime(currentTime)}
-          </span>
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            step={0.01}
-            value={Math.min(currentTime, duration || 0)}
-            onChange={(e) => onSeek(e.target.valueAsNumber)}
-            aria-label="Seek"
-            className="h-1 flex-1 cursor-pointer accent-primary"
-          />
-          <span className="w-9 text-xs text-muted-foreground tabular-nums">
-            {formatTime(duration)}
-          </span>
-        </div>
-      )}
 
       <Range
         label="Columns"
@@ -206,13 +145,6 @@ export function Controls({
       </label>
     </div>
   )
-}
-
-function formatTime(seconds: number) {
-  if (!Number.isFinite(seconds)) return "0:00"
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${s.toString().padStart(2, "0")}`
 }
 
 function Range({

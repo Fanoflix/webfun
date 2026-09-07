@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useSidebar } from "@/components/ui/sidebar"
-import { useFlags } from "@/features/flags/useFlags"
 import { bindShortcutRelease, isSearchShortcut } from "./shortcut"
 import { navGroups } from "./nav-items"
 import type { NavGroup, NavItem } from "./nav-items"
@@ -57,7 +56,6 @@ export function useSidebarNav(): SidebarNav {
   // `query` so typing feels instant while results settle after a short pause.
   const [debounced, setDebounced] = useState("")
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-  const { unlocked, isVisible } = useFlags()
 
   const inputRef = useRef<HTMLInputElement>(null)
   const { isMobile, setOpen, setOpenMobile } = useSidebar()
@@ -98,20 +96,14 @@ export function useSidebarNav(): SidebarNav {
   const searching = debounced.trim().length > 0
 
   const groups = useMemo<NavGroup[]>(() => {
-    // Unreleased tools are dropped before search, so they can't be surfaced by
-    // typing their name either.
+    if (!searching) return navGroups
     return navGroups
       .map((g) => ({
         ...g,
-        items: g.items.filter(
-          (it) =>
-            isVisible(it.tool) &&
-            (!searching || itemMatches(it, g.label, debounced))
-        ),
+        items: g.items.filter((it) => itemMatches(it, g.label, debounced)),
       }))
       .filter((g) => g.items.length > 0)
-    // `isVisible` closes over `unlocked`, so that's the real dependency.
-  }, [debounced, searching, unlocked])
+  }, [debounced, searching])
 
   const isOpen = (label: string) => searching || !collapsed.has(label)
 
