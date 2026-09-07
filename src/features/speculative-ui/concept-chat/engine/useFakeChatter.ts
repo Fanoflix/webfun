@@ -49,7 +49,10 @@ function pick<T>(pool: readonly T[]): T {
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
-export function useFakeChatter({ append, toggleReaction }: Params): FakeChatter {
+export function useFakeChatter({
+  append,
+  toggleReaction,
+}: Params): FakeChatter {
   const [isTyping, setIsTyping] = useState(false)
 
   /**

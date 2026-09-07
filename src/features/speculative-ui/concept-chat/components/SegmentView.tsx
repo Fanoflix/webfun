@@ -44,7 +44,13 @@ function TextSegment({ text }: { text: string }) {
  * Media is capped rather than sized to the source: the bundled assets run up to
  * 10000px wide, and a chat message is not the place to find that out.
  */
-function MediaSegment({ src, isGif = false }: { src: string; isGif?: boolean }) {
+function MediaSegment({
+  src,
+  isGif = false,
+}: {
+  src: string
+  isGif?: boolean
+}) {
   return (
     <div className="relative max-w-sm border border-border">
       <img

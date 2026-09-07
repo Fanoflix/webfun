@@ -10,7 +10,11 @@ import type {
 } from "./types"
 
 /** What a cell showed on the previous render, keyed by cell id. */
-export type CellSnapshot = { value: unknown; isEmpty: boolean; rowId: string | undefined }
+export type CellSnapshot = {
+  value: unknown
+  isEmpty: boolean
+  rowId: string | undefined
+}
 export type SlotSnapshot = Map<string, CellSnapshot>
 
 function columnId<T>(column: ColumnDef<T>, index: number): string {

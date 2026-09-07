@@ -135,7 +135,8 @@ function isSegment(value: unknown): value is Segment {
       return typeof value.text === "string"
     case "image":
       return (
-        typeof value.assetId === "string" && Object.hasOwn(IMAGES, value.assetId)
+        typeof value.assetId === "string" &&
+        Object.hasOwn(IMAGES, value.assetId)
       )
     case "gif":
       return (
@@ -148,7 +149,9 @@ function isSegment(value: unknown): value is Segment {
 
 function isReaction(value: unknown): value is Reaction {
   return (
-    isRecord(value) && typeof value.emoji === "string" && isStringArray(value.by)
+    isRecord(value) &&
+    typeof value.emoji === "string" &&
+    isStringArray(value.by)
   )
 }
 

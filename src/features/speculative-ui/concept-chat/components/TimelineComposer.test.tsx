@@ -144,9 +144,9 @@ describe("timeline composing", () => {
     type("this")
     click("Send message")
 
-    expect(screen.getAllByRole("button", { name: "Play message" })).toHaveLength(
-      playablesBefore + 1
-    )
+    expect(
+      screen.getAllByRole("button", { name: "Play message" })
+    ).toHaveLength(playablesBefore + 1)
     // The last beat is not on screen until it's played.
     expect(screen.queryByText("this")).toBeNull()
   })
@@ -193,11 +193,13 @@ describe("timeline composing", () => {
     pressEnter()
     type("this")
 
-    const before = screen.getAllByRole("button", { name: "Play message" }).length
+    const before = screen.getAllByRole("button", {
+      name: "Play message",
+    }).length
     click("Preview")
 
-    expect(screen.getAllByRole("button", { name: "Play message" })).toHaveLength(
-      before + 1
-    )
+    expect(
+      screen.getAllByRole("button", { name: "Play message" })
+    ).toHaveLength(before + 1)
   })
 })

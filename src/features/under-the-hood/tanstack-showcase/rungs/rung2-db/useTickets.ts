@@ -89,7 +89,11 @@ export function useDbTickets({
     queryKey:
       selectedId === null ? IDLE_DETAIL_KEY : ticketKeys.detail(selectedId),
     queryFn: ({ signal }) =>
-      server.getTicket(selectedId!, traceOf(ticketKeys.detail(selectedId!)), signal),
+      server.getTicket(
+        selectedId!,
+        traceOf(ticketKeys.detail(selectedId!)),
+        signal
+      ),
     enabled: selectedId !== null,
     staleTime: STALE_TIME,
   })

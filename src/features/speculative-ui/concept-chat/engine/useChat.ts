@@ -25,9 +25,17 @@ export type ChatApi = {
    * Add a message from anyone. Returns the new id, which callers need — the fake
    * chatter reacts to the message you just sent, and can only find it by id.
    */
-  append: (authorId: AuthorId, body: Segment[], mode?: Message["mode"]) => string
+  append: (
+    authorId: AuthorId,
+    body: Segment[],
+    mode?: Message["mode"]
+  ) => string
   /** Add the emoji if this author hasn't used it here, remove it if they have. */
-  toggleReaction: (messageId: string, emoji: string, authorId?: AuthorId) => void
+  toggleReaction: (
+    messageId: string,
+    emoji: string,
+    authorId?: AuthorId
+  ) => void
   /**
    * Record that a timeline message played to the end, so a reload brings it back
    * finished rather than asking to be watched again.
@@ -83,12 +91,15 @@ export function useChat(): ChatApi {
    */
   const latest = useRef(state)
 
-  const commit = useCallback((update: (current: ThreadState) => ThreadState) => {
-    const next = update(latest.current)
-    latest.current = next
-    setState(next)
-    saveThread(next)
-  }, [])
+  const commit = useCallback(
+    (update: (current: ThreadState) => ThreadState) => {
+      const next = update(latest.current)
+      latest.current = next
+      setState(next)
+      saveThread(next)
+    },
+    []
+  )
 
   const append = useCallback(
     (authorId: AuthorId, body: Segment[], mode?: Message["mode"]) => {

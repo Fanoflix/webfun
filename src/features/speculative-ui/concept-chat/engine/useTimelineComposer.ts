@@ -162,14 +162,11 @@ export function useTimelineComposer(
     [disable, loadDraft, selectedIndex, stored, withDraft]
   )
 
-  const setHold = useCallback(
-    (index: number, ms: number) => {
-      setStored((current) =>
-        current.map((beat, i) => (i === index ? { ...beat, hold: ms } : beat))
-      )
-    },
-    []
-  )
+  const setHold = useCallback((index: number, ms: number) => {
+    setStored((current) =>
+      current.map((beat, i) => (i === index ? { ...beat, hold: ms } : beat))
+    )
+  }, [])
 
   const moveBeat = useCallback(
     (index: number, direction: -1 | 1) => {

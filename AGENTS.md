@@ -26,7 +26,7 @@ Deployed as a static SPA to GitHub Pages under the `/webfun/` base path.
 | Styling | Tailwind v4 (CSS-first config in `src/styles.css`), shadcn on Base UI |
 | Animation | `motion` (Framer Motion v12) |
 | Icons | `lucide-react` |
-| Package manager | **Yarn 4 + PnP** (`.pnp.cjs` is committed) |
+| Package manager | **Yarn 4**, node-modules linker (`nodeLinker` in `.yarnrc.yml`) |
 | Tests | Vitest; DOM tests opt in per file with `// @vitest-environment jsdom` |
 
 Commands: `yarn dev` (port 3005), `yarn build`, `yarn test`, `yarn lint`,

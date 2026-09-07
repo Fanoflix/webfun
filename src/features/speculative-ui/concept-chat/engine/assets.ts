@@ -58,7 +58,9 @@ export type GifId = keyof typeof GIFS
  * Narrowing happens through the declared return type rather than a cast, so no
  * caller has to write `as ImageId[]` at each use site.
  */
-function manifestIds<T extends Record<string, string>>(manifest: T): (keyof T)[] {
+function manifestIds<T extends Record<string, string>>(
+  manifest: T
+): (keyof T)[] {
   return Object.keys(manifest)
 }
 

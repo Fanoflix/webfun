@@ -53,9 +53,9 @@ describe("NEVER_RELEASED", () => {
   it("is stripped from a production release list even if the env names it", () => {
     // The behaviour that actually matters: no env var can put an unlock-only
     // tool on the public site.
-    expect(
-      applyReleaseGuard(["dithering", "concept-chat"], false)
-    ).toEqual(["dithering"])
+    expect(applyReleaseGuard(["dithering", "concept-chat"], false)).toEqual([
+      "dithering",
+    ])
   })
 
   it("survives in dev, so it can be worked on locally", () => {

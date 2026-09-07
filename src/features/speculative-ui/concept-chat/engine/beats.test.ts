@@ -62,7 +62,11 @@ describe("toBeats", () => {
 
 describe("totalDurationMs", () => {
   it("excludes the last beat's hold — nothing follows it", () => {
-    const beats = toBeats([text("one", 800), text("two", 1_500), text("three", 5_000)])
+    const beats = toBeats([
+      text("one", 800),
+      text("two", 1_500),
+      text("three", 5_000),
+    ])
 
     expect(totalDurationMs(beats)).toBe(2_300)
   })
@@ -121,8 +125,8 @@ describe("isTimeline", () => {
 
   it("follows mode, not the shape of the body", () => {
     expect(isTimeline({ ...base, mode: "timeline" })).toBe(true)
-    expect(isTimeline({ ...base, mode: "static", body: [text("a", 800)] })).toBe(
-      false
-    )
+    expect(
+      isTimeline({ ...base, mode: "static", body: [text("a", 800)] })
+    ).toBe(false)
   })
 })

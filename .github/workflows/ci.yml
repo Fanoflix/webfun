@@ -1,0 +1,46 @@
+name: CI
+
+# Runs on every pull request, and on main so the badge reflects what is
+# actually deployed. A PR from a fork gets the same checks as one from here.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Only the token's default read access; CI never writes anything.
+permissions:
+  contents: read
+
+# A new push to a PR makes the previous run pointless — cancel it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Yarn 4, version pinned by "packageManager" in package.json.
+      - run: corepack enable
+
+      # --immutable fails if yarn.lock would change, so a PR cannot quietly
+      # drift the lockfile.
+      - run: yarn install --immutable
+
+      - run: yarn typecheck
+
+      - run: yarn lint
+
+      - run: yarn check
+
+      - run: yarn test
+
+      # Not redundant with the deploy workflow: this proves a PR builds
+      # *before* it reaches main, rather than after.
+      - run: yarn build
