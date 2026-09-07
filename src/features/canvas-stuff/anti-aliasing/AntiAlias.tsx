@@ -10,6 +10,7 @@ export function AntiAlias() {
   const {
     settings,
     comparing,
+    compareLatched,
     collapsed,
     animating,
     region,
@@ -20,7 +21,9 @@ export function AntiAlias() {
     displayHeight,
     onChange,
     exportPng,
-    setComparing,
+    setCompareLatched,
+    startPeek,
+    endPeek,
     setCollapsed,
     setAnimating,
     setRegion,
@@ -42,8 +45,8 @@ export function AntiAlias() {
           comparing={comparing}
           displayWidth={displayWidth}
           displayHeight={displayHeight}
-          onHoldStart={() => setComparing(true)}
-          onHoldEnd={() => setComparing(false)}
+          onHoldStart={startPeek}
+          onHoldEnd={endPeek}
         >
           <ZoomSelection
             region={region}
@@ -64,8 +67,8 @@ export function AntiAlias() {
           animating={animating}
           onToggleAnimate={setAnimating}
           onExport={exportPng}
-          onCompareStart={() => setComparing(true)}
-          onCompareEnd={() => setComparing(false)}
+          comparing={compareLatched}
+          onComparingChange={setCompareLatched}
           onCollapse={() => setCollapsed(true)}
         />
         <ZoomBox

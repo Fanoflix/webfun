@@ -1,4 +1,5 @@
 import { ToolIntro } from "@/components/layout/ToolIntro"
+import { FileDropZone } from "@/components/upload/FileDropZone"
 import { Controls } from "./Controls"
 import { PixelScreen } from "./PixelScreen"
 import { useLowResVideo } from "./useLowResVideo"
@@ -33,14 +34,12 @@ export function LowResVideo() {
         scoreboard: up close it's a grid of dots, from far away it's a face.
       </ToolIntro>
 
-      <div
-        className="relative grid place-items-center overflow-auto rounded-none bg-black p-4"
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault()
-          const file = e.dataTransfer.files.item(0)
-          if (file && file.type.startsWith("video/")) pickFile(file)
-        }}
+      <FileDropZone
+        accept="video/*"
+        onPick={pickFile}
+        empty={!hasVideo}
+        hint="Drop a video, or click to upload"
+        className="grid place-items-center overflow-auto bg-black p-4"
       >
         <PixelScreen
           ref={screenRef}
@@ -51,14 +50,7 @@ export function LowResVideo() {
           shape={shape}
           aspect={videoAspect}
         />
-        {!hasVideo && (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <p className="text-xs tracking-widest text-white/50 uppercase">
-              Drop a video or click upload
-            </p>
-          </div>
-        )}
-      </div>
+      </FileDropZone>
 
       <Controls
         settings={settings}

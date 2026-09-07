@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react"
 
+import { useCompare } from "@/hooks/useCompare"
 import type { Region } from "@/components/loupe/region"
 import type { AACanvasHandle } from "./AACanvas"
-import { SCENE_ASPECT, render } from "./raster"
-import type { AASettings } from "./raster"
+import { SCENE_ASPECT, findEdge, render } from "./raster"
+import type { AASettings, Scene } from "./raster"
 
 const DEFAULT_SETTINGS: AASettings = {
   scene: "pentagon",
@@ -42,7 +43,7 @@ const workDims = (resolution: number) => ({
  */
 export function useAntiAlias() {
   const [settings, setSettings] = useState<AASettings>(DEFAULT_SETTINGS)
-  const [comparing, setComparing] = useState(false)
+  const compare = useCompare()
   const [collapsed, setCollapsed] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [center, setCenter] = useState({ x: 0.5, y: 0.5 })
@@ -52,17 +53,31 @@ export function useAntiAlias() {
 
   const canvasRef = useRef<AACanvasHandle>(null)
   const loupeRef = useRef<HTMLCanvasElement>(null)
+  // The scene the loupe was last parked on an edge for. A scene change is the
+  // one time it's right to overrule a manual drag: the old spot belongs to
+  // geometry that isn't on screen any more.
+  const parkedOn = useRef<Scene | null>(null)
 
   // Re-render whenever the scene or any setting changes. The rasteriser is cheap
   // at these resolutions, so no debounce — that also lets the spin animate.
   useEffect(() => {
     const { w, h } = workDims(settings.resolution)
-    canvasRef.current?.paint(render(w, h, settings), w, h)
+    const smooth = render(w, h, settings)
+    canvasRef.current?.paint(smooth, w, h)
     canvasRef.current?.paintCompare(
       render(w, h, { ...settings, samples: 1 }),
       w,
       h
     )
+
+    // Park the loupe on an actual edge, or it opens on flat white and the
+    // before/after it exists to show is invisible until you go looking.
+    if (parkedOn.current !== settings.scene) {
+      const edge = findEdge(smooth, w, h)
+      if (edge) setCenter(edge)
+      parkedOn.current = settings.scene
+    }
+
     setFrameVersion((v) => v + 1)
   }, [settings])
 
@@ -93,11 +108,12 @@ export function useAntiAlias() {
   }
 
   // Redraw the loupe on any change. The selection is square so it fills the
-  // square loupe exactly; nearest-neighbour keeps pixels crisp. While comparing
-  // we sample the aliased canvas for a like-for-like before/after.
+  // square loupe exactly; nearest-neighbour keeps pixels crisp. Whenever the
+  // view is comparing — held or latched — we sample the aliased canvas instead,
+  // for a like-for-like before/after.
   useEffect(() => {
     const loupe = loupeRef.current
-    const source = comparing
+    const source = compare.comparing
       ? canvasRef.current?.getCompareCanvas()
       : canvasRef.current?.getCanvas()
     if (!loupe || !source) return
@@ -127,7 +143,7 @@ export function useAntiAlias() {
     region.w,
     region.h,
     frameVersion,
-    comparing,
+    compare.comparing,
     settings.resolution,
   ])
 
@@ -153,7 +169,8 @@ export function useAntiAlias() {
 
   return {
     settings,
-    comparing,
+    comparing: compare.comparing,
+    compareLatched: compare.latched,
     collapsed,
     animating,
     region,
@@ -164,7 +181,9 @@ export function useAntiAlias() {
     displayHeight,
     onChange,
     exportPng,
-    setComparing,
+    setCompareLatched: compare.setLatched,
+    startPeek: compare.startPeek,
+    endPeek: compare.endPeek,
     setCollapsed,
     setAnimating,
     setRegion,

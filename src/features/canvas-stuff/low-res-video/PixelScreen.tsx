@@ -250,7 +250,9 @@ export const PixelScreen = memo(function PixelScreen({
         <div
           onPointerDown={startResize}
           aria-label="Resize screen"
-          className="absolute -right-1 -bottom-1 flex size-5 cursor-nwse-resize touch-none items-end justify-end"
+          // z-10 keeps the handle grabbable through the empty-state upload
+          // overlay, which covers the whole screen until a video is loaded.
+          className="absolute -right-1 -bottom-1 z-10 flex size-5 cursor-nwse-resize touch-none items-end justify-end"
         >
           <div className="size-3 rounded-xs border-r-2 border-b-2 border-primary" />
         </div>

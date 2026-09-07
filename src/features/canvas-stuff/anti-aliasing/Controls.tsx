@@ -1,6 +1,7 @@
 import { Download, Eye } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Toggle } from "@/components/ui/toggle"
 import {
   Select,
   SelectContent,
@@ -19,8 +20,8 @@ type Props = {
   animating: boolean
   onToggleAnimate: (value: boolean) => void
   onExport: () => void
-  onCompareStart: () => void
-  onCompareEnd: () => void
+  comparing: boolean
+  onComparingChange: (comparing: boolean) => void
   onCollapse: () => void
 }
 
@@ -30,8 +31,8 @@ export function Controls({
   animating,
   onToggleAnimate,
   onExport,
-  onCompareStart,
-  onCompareEnd,
+  comparing,
+  onComparingChange,
   onCollapse,
 }: Props) {
   const sceneLabel = SCENES.find((s) => s.value === settings.scene)?.label
@@ -39,21 +40,17 @@ export function Controls({
   return (
     <Panel title="Controls" onCollapse={onCollapse}>
       <div className="flex gap-2">
-        <Button
+        {/* A latch, not a hold — holding still works on the canvas itself.
+            This is the one you want while dragging Samples. */}
+        <Toggle
           variant="outline"
-          className="flex-1 touch-none select-none"
-          aria-label="Hold to compare with the aliased version"
-          onPointerDown={(e) => {
-            e.preventDefault()
-            onCompareStart()
-          }}
-          onPointerUp={onCompareEnd}
-          onPointerLeave={onCompareEnd}
-          onPointerCancel={onCompareEnd}
+          className="flex-1"
+          pressed={comparing}
+          onPressedChange={onComparingChange}
         >
           <Eye />
-          Hold to compare
-        </Button>
+          {comparing ? "Showing aliased" : "Compare"}
+        </Toggle>
         <Button
           variant="outline"
           size="icon"

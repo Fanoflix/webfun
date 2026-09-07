@@ -118,3 +118,48 @@ export function render(w: number, h: number, s: AASettings): Uint8ClampedArray {
   }
   return out
 }
+
+/**
+ * The edge pixel nearest the middle of the frame, in normalised (0..1) coords.
+ *
+ * The loupe used to open at dead centre, which for every scene here is deep
+ * *inside* the shape — a flat white square. That made the one instrument
+ * capable of settling "is this actually anti-aliased?" show nothing at all
+ * until you dragged it somewhere useful.
+ *
+ * An edge is found by coverage, not geometry, so this works for any scene
+ * without a per-scene table: a pixel that is neither fully background nor
+ * fully foreground is by definition one the shape's boundary passed through.
+ * Ties break towards the centre, so the result is deterministic.
+ *
+ * Returns `null` for a frame with no partial pixels at all (a 1-sample render,
+ * or an empty scene), leaving the caller's current centre alone.
+ */
+export function findEdge(
+  data: Uint8ClampedArray,
+  w: number,
+  h: number
+): { x: number; y: number } | null {
+  const lo = Math.min(BG[0], FG[0])
+  const hi = Math.max(BG[0], FG[0])
+  const cx = w / 2
+  const cy = h / 2
+
+  let best: { x: number; y: number } | null = null
+  let bestDist = Infinity
+
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const r = data[(py * w + px) * 4]
+      if (r <= lo || r >= hi) continue
+      const dx = px + 0.5 - cx
+      const dy = py + 0.5 - cy
+      const dist = dx * dx + dy * dy
+      if (dist < bestDist) {
+        bestDist = dist
+        best = { x: (px + 0.5) / w, y: (py + 0.5) / h }
+      }
+    }
+  }
+  return best
+}
